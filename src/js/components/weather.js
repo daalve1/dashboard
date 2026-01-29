@@ -21,7 +21,7 @@ export async function initWeather(targetId) {
     if (!ui) return;
 
     // Endpoint de predicción diaria Torrent
-    const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.AEMET_API_KEY}`;
+    const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.VITE_AEMET_API_KEY}`;
 
     // Endpoint de avisos AEMET
     const urlAvisos = `https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAC77_RSS.xml`;
