@@ -52,7 +52,12 @@ async function fetchWithRetry(url, options = {}) {
 async function fetchAndProcessAvisos(url, delayMs = 1000) {
     for (let i = 1; i <= FETCH_MAX_RETRIES; i++) {
         try {
-            const res = await fetchWithRetry(url, { method: 'GET' });
+            const res = await fetchWithRetry(url, {
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
             const text = await res.text();
             const processed = extractAvisos(text);
             // Si extractAvisos devuelve el mensaje de fallo, considerarlo error
@@ -186,8 +191,8 @@ export async function initWeather(targetId) {
         
         ui.setSuccess();
         
-        // Cargar avisos en paralelo sin bloquear
-        fetchAndProcessAvisos(urlAvisos, 1000).then(avisosHTML => {
+        // Cargar avisos en paralelo sin bloquear (2s entre reintentos)
+        fetchAndProcessAvisos(urlAvisos, 2000).then(avisosHTML => {
             const container = document.getElementById('weather-avisos-container');
             if (container) container.innerHTML = avisosHTML;
         }).catch(err => {
