@@ -6,5 +6,6 @@ export const BIRTHDAYS = [
     { date: '08-13', name: 'PAPÁ JESÚS', initials: 'PJ' },
     { date: '10-17', name: 'TETE JAUME', initials: 'J' },
     { date: '10-30', name: 'RAYITO LEO', initials: 'RL' },
-    { date: '11-21', name: 'AMORE', initials: 'AD' },  
+    { date: '11-21', name: 'AMORE', initials: 'AD' },
+    { date: '12-12', name: 'Mi cumple', initials: 'S' },
 ];

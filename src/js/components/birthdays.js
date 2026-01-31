@@ -1,5 +1,6 @@
 import { mountCard } from '../utils/ui.js';
 import { BIRTHDAYS } from '../constants.js';
+import { lanzarDecoracion } from '../utils/decoration.js';
 
 export async function initBirthdays(targetId) {
     const ui = mountCard(targetId, 'Cumpleaños del Año');
@@ -53,8 +54,14 @@ export async function initBirthdays(targetId) {
             });
 
             let badge = '';
+
+            // Comparar si es 12-12
             if (bd.esHoy) {
                 badge = '<span class="badge bg-danger">¡Hoy!</span>';
+
+                if(bd.date === '12-12') {
+                    lanzarDecoracion('birthdays-mount', 'confeti');
+                }
             } else if (bd.diasFaltantes === 1) {
                 badge = '<span class="badge bg-warning text-dark">Mañana</span>';
             } else {

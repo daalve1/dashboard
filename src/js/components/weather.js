@@ -1,4 +1,5 @@
 import { mountCard } from '../utils/ui.js';
+import { lanzarDecoracion } from '../utils/decoration.js';
 
 /**
  * Mapea los estados de cielo de AEMET a emojis
@@ -9,7 +10,10 @@ function getAemetEmoji(descripcion) {
     if (desc.includes('poco nuboso')) return '🌤️';
     if (desc.includes('nuboso')) return '☁️';
     if (desc.includes('cubierto')) return '☁️';
-    if (desc.includes('lluvia') || desc.includes('llovizna')) return '🌧️';
+    if (desc.includes('lluvia') || desc.includes('llovizna')) {
+        lanzarDecoracion('weather-mount', 'lluvia');
+        return '🌧️';
+    }
     if (desc.includes('tormenta')) return '⛈️';
     if (desc.includes('nieve')) return '❄️';
     if (desc.includes('niebla')) return '🌫️';
@@ -156,11 +160,12 @@ export async function initWeather(targetId) {
                 <div class="col-6 text-center">
                     <div class="fs-1 fw-bold">${emoji}</div>
                     <div class="fs-1 fw-bold">${temperaturaActual}°C</div>
-                </div>
-                <div class="col-6">
+                    
                     <span class="text-primary fw-bold">↓ ${tempMin}°</span>
                     <span class="text-danger fw-bold">↑ ${tempMax}°</span>
-                    <div class="text-muted small">
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small d-flex align-items-center h-100">
                         🌧️ ${precipitacionActual}%<br>
                         💧 ${humedadActual}%<br>
                         🌞 ${uvIndice}<br/>
