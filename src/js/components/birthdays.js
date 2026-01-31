@@ -4,6 +4,7 @@ import { BIRTHDAYS } from '../constants.js';
 export async function initBirthdays(targetId) {
     const ui = mountCard(targetId, 'Cumpleaños del Año');
     if (!ui) return;
+    ui.setLoading(true);
 
     try {
         const hoy = new Date();

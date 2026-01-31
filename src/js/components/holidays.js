@@ -3,6 +3,7 @@ import { mountCard } from '../utils/ui.js';
 export async function initHolidays(targetId) {
     const ui = mountCard(targetId, 'Próximos festivos');
     if (!ui) return;
+    ui.setLoading(true);
 
     const year = new Date().getFullYear();
     // Endpoint de Nager.Date para España (ES)

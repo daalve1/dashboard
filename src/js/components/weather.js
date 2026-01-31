@@ -16,9 +16,103 @@ function getAemetEmoji(descripcion) {
     return '🌤️';
 }
 
+// Constante de reintentos
+const FETCH_MAX_RETRIES = 5;
+
+/**
+ * Realiza un fetch con reintentos automáticos
+ */
+async function fetchWithRetry(url, options = {}) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= FETCH_MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            if (attempt > 1) {
+                console.log(`[Fetch] ✓ Éxito en intento ${attempt}/${FETCH_MAX_RETRIES}`);
+            }
+            return response;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[Fetch] ✗ Intento ${attempt}/${FETCH_MAX_RETRIES} falló: ${error.message}`);
+            if (attempt < FETCH_MAX_RETRIES) {
+                // Esperar 1 segundo antes de reintentar (APIs públicas)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+    }
+    
+    console.error(`[Fetch] ✗ Falló tras ${FETCH_MAX_RETRIES} intentos`);
+    throw lastError;
+}
+
+async function fetchAndProcessAvisos(url, delayMs = 1000) {
+    for (let i = 1; i <= FETCH_MAX_RETRIES; i++) {
+        try {
+            const res = await fetchWithRetry(url, { method: 'GET' });
+            const text = await res.text();
+            const processed = extractAvisos(text);
+            // Si extractAvisos devuelve el mensaje de fallo, considerarlo error
+            if (typeof processed === 'string' && processed.includes('No se han podido cargar los avisos')) {
+                throw new Error('Contenido de avisos inválido');
+            }
+            return processed;
+        } catch (err) {
+            console.warn(`[Avisos] ✗ Intento ${i}/${FETCH_MAX_RETRIES} falló: ${err.message}`);
+            if (i < FETCH_MAX_RETRIES) await new Promise(r => setTimeout(r, delayMs));
+        }
+    }
+    console.error('[Avisos] ✗ Fallaron todos los intentos para avisos');
+    return `\n                        <div class="d-flex align-items-center text-danger text-center">\n                            <div class="fw-bold small w-100">⚠️ No se han podido cargar los avisos</div>\n                        </div>\n                    `;
+}
+
+/**
+ * Obtiene el valor actual según la hora del día
+ */
+function getValueByHour(horaActual, dataArray) {
+    const indiceMap = {
+        early: 0,    // 0-5h
+        morning: 1,  // 6-11h
+        afternoon: 2, // 12-17h
+        evening: 3   // 18-23h
+    };
+    
+    let periodo;
+    if (horaActual < 6) periodo = 'early';
+    else if (horaActual < 12) periodo = 'morning';
+    else if (horaActual < 18) periodo = 'afternoon';
+    else periodo = 'evening';
+    
+    return dataArray[indiceMap[periodo]];
+}
+
+/**
+ * Obtiene el valor actual para datos con más periodos (lluvia, viento)
+ */
+function getValueByHourExtended(horaActual, dataArray) {
+    const indiceMap = {
+        early: 3,    // 0-5h
+        morning: 4,  // 6-11h
+        afternoon: 5, // 12-17h
+        evening: 6   // 18-23h
+    };
+    
+    let periodo;
+    if (horaActual < 6) periodo = 'early';
+    else if (horaActual < 12) periodo = 'morning';
+    else if (horaActual < 18) periodo = 'afternoon';
+    else periodo = 'evening';
+    
+    return dataArray[indiceMap[periodo]];
+}
+
 export async function initWeather(targetId) {
     const ui = mountCard(targetId, 'Meteorología');
     if (!ui) return;
+    ui.setLoading(true);
 
     // Endpoint de predicción diaria Torrent
     const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.VITE_AEMET_API_KEY}`;
@@ -27,56 +121,44 @@ export async function initWeather(targetId) {
     const urlAvisos = `https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAC77_RSS.xml`;
 
     try {
-        // PASO 1: Obtener la URL temporal de los datos
-        const resPrediccion = await fetch(urlPrediccion, {
+        // PASO 1: Obtener la URL temporal de los datos (con reintentos)
+        const resPrediccion = await fetchWithRetry(urlPrediccion, {
             method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        const resAvisos =  await fetch(urlAvisos, {
-            method: 'GET'
+            headers: { 'Accept': 'application/json' }
         });
 
         const infoPrediccion = await resPrediccion.json();
 
         // Verificamos si la API de AEMET nos ha dado el OK
-        if (infoPrediccion.estado !== 200 || resAvisos.status !== 200) {
-            throw new Error(infoPrediccion.descripcion || 'Error en la API');
+        if (infoPrediccion.estado !== 200) {
+            throw new Error(infoPrediccion.descripcion || 'Error en la API Predicción');
         }
 
         // PASO 2: Obtener los datos reales desde la URL que nos devuelve AEMET
-        const resPrediccionData = await fetch(infoPrediccion.datos);
+        const resPrediccionData = await fetchWithRetry(infoPrediccion.datos, {});
         const dataRawPrediccion = await resPrediccionData.json();
-
-        const resAvisosData = await resAvisos.text();
         
         // AEMET devuelve un array, el primer elemento [0] es el municipio solicitado
         // y dentro de prediccion.dia[0] tenemos los datos de hoy
         const prediccion = dataRawPrediccion[0].prediccion.dia[0];
 
-        // Extraer avisos y convertir a HTML
-        const avisosHTML = extractAvisos(resAvisosData);
+        // Extraer avisos y convertir a HTML (con helper que reintenta si el contenido indica fallo)
+        const avisosHTML = await fetchAndProcessAvisos(urlAvisos, 1000);
 
         // Obtener hora actual
         const horaActual = new Date().getHours();
 
         const estado = prediccion.estadoCielo[0].descripcion;
         const emoji = getAemetEmoji(estado);
-        const temperaturaData = prediccion.temperatura.dato;
         const tempMax = prediccion.temperatura.maxima;
         const tempMin = prediccion.temperatura.minima;
-        const humedadData = prediccion.humedadRelativa.dato;
-        const precipitacionData = prediccion.probPrecipitacion;
         const uvIndice = prediccion.uvMax;
-        const vientoData = prediccion.viento;
 
-        // Obtener humedad actual según la hora del día
-        const humedadActual = getHumedadActual(horaActual, humedadData);
-        const precipitacionActual = getPrecipitacionActual(horaActual, precipitacionData);
-        const temperaturaActual = getTemperaturaActual(horaActual, temperaturaData);
-        const vientoActual = getVientoActual(horaActual, vientoData);
+        // Obtener valores actuales según la hora
+        const temperaturaActual = getValueByHour(horaActual, prediccion.temperatura.dato).value;
+        const humedadActual = getValueByHour(horaActual, prediccion.humedadRelativa.dato).value;
+        const precipitacionActual = getValueByHourExtended(horaActual, prediccion.probPrecipitacion).value;
+        const vientoActual = getValueByHourExtended(horaActual, prediccion.viento).velocidad;
 
         // Renderizado del contenido
         ui.setContent(`
@@ -104,8 +186,10 @@ export async function initWeather(targetId) {
         ui.setSuccess();
     } catch (error) {
         ui.setError('Error API Tiempo');
+        console.error("Error en Weather:", error);
     }
 }
+
 
 function extractAvisos(data) {
     const error = data.includes("The requested URL was rejected");
@@ -171,68 +255,4 @@ function extractAvisos(data) {
     }
 
     return html;
-}
-
-function getTemperaturaActual(horaActual, temperatura) {
-    let indiceTemp;
-
-    if (horaActual < 6) {
-        indiceTemp = 0;
-    } else if (horaActual < 12) {
-        indiceTemp = 1;
-    } else if (horaActual < 18) {
-        indiceTemp = 2;
-    } else {
-        indiceTemp = 3;
-    }
-
-    return temperatura[indiceTemp].value;
-}
-
-function getPrecipitacionActual(horaActual, probPrecipitacion) {
-    let indiceLluvia;
-    
-    if (horaActual < 6) {
-        indiceLluvia = 3;
-    } else if (horaActual < 12) {
-        indiceLluvia = 4;
-    } else if (horaActual < 18) {
-        indiceLluvia = 5;
-    } else {
-        indiceLluvia = 6;
-    }
-
-    return probPrecipitacion[indiceLluvia].value;
-}
-
-function getHumedadActual(horaActual, humedadRelativa) {
-    let indiceHumedad;
-
-    if (horaActual < 6) {
-        indiceHumedad = 0;
-    } else if (horaActual < 12) {
-        indiceHumedad = 1;
-    } else if (horaActual < 18) {
-        indiceHumedad = 2;
-    } else {
-        indiceHumedad = 3;
-    }
-
-    return humedadRelativa[indiceHumedad].value;
-}
-
-function getVientoActual(horaActual, viento) {
-    let indiceViento;
-
-    if (horaActual < 6) {
-        indiceViento = 3;
-    } else if (horaActual < 12) {
-        indiceViento = 4;
-    } else if (horaActual < 18) {
-        indiceViento = 5;
-    } else {
-        indiceViento = 6;
-    }
-
-    return viento[indiceViento].velocidad;
 }
