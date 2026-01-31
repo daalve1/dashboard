@@ -142,9 +142,6 @@ export async function initWeather(targetId) {
         // y dentro de prediccion.dia[0] tenemos los datos de hoy
         const prediccion = dataRawPrediccion[0].prediccion.dia[0];
 
-        // Extraer avisos y convertir a HTML (con helper que reintenta si el contenido indica fallo)
-        const avisosHTML = await fetchAndProcessAvisos(urlAvisos, 1000);
-
         // Obtener hora actual
         const horaActual = new Date().getHours();
 
@@ -160,7 +157,7 @@ export async function initWeather(targetId) {
         const precipitacionActual = getValueByHourExtended(horaActual, prediccion.probPrecipitacion).value;
         const vientoActual = getValueByHourExtended(horaActual, prediccion.viento).velocidad;
 
-        // Renderizado del contenido
+        // Renderizado del contenido del tiempo (sin esperar a avisos)
         ui.setContent(`
             <div class="row">
                 <div class="col-6 text-center">
@@ -178,12 +175,30 @@ export async function initWeather(targetId) {
                     </div>
                 </div>
             </div>
-            <div class="mt-3">
-                ${avisosHTML}
+            <div class="mt-3" id="weather-avisos-container">
+                <div class="d-flex justify-content-center py-2">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                        <span class="visually-hidden">Cargando avisos...</span>
+                    </div>
+                </div>
             </div>
         `);
         
         ui.setSuccess();
+        
+        // Cargar avisos en paralelo sin bloquear
+        fetchAndProcessAvisos(urlAvisos, 1000).then(avisosHTML => {
+            const container = document.getElementById('weather-avisos-container');
+            if (container) container.innerHTML = avisosHTML;
+        }).catch(err => {
+            console.error('Error cargando avisos:', err);
+            const container = document.getElementById('weather-avisos-container');
+            if (container) container.innerHTML = `
+                <div class="d-flex align-items-center text-danger text-center">
+                    <div class="fw-bold small w-100">⚠️ No se han podido cargar los avisos</div>
+                </div>
+            `;
+        });
     } catch (error) {
         ui.setError('Error API Tiempo');
         console.error("Error en Weather:", error);
