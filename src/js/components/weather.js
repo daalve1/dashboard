@@ -49,29 +49,17 @@ async function fetchWithRetry(url, options = {}) {
     throw lastError;
 }
 
-async function fetchAndProcessAvisos(url, delayMs = 1000) {
-    for (let i = 1; i <= FETCH_MAX_RETRIES; i++) {
-        try {
-            const res = await fetchWithRetry(url, {
-                method: 'GET',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            });
-            const text = await res.text();
-            const processed = extractAvisos(text);
-            // Si extractAvisos devuelve el mensaje de fallo, considerarlo error
-            if (typeof processed === 'string' && processed.includes('No se han podido cargar los avisos')) {
-                throw new Error('Contenido de avisos inválido');
-            }
-            return processed;
-        } catch (err) {
-            console.warn(`[Avisos] ✗ Intento ${i}/${FETCH_MAX_RETRIES} falló: ${err.message}`);
-            if (i < FETCH_MAX_RETRIES) await new Promise(r => setTimeout(r, delayMs));
-        }
+async function fetchAndProcessAvisos(url) {
+    try {
+        // Añadimos timestamp para evitar caché del navegador
+        const res = await fetch(`${url}?t=${Date.now()}`);
+        if (!res.ok) throw new Error('Error en backend');
+        const text = await res.text();
+        return extractAvisos(text);
+    } catch (e) {
+        console.error(e);
+        return `<div class="text-danger p-1">Error cargando avisos</div>`;
     }
-    console.error('[Avisos] ✗ Fallaron todos los intentos para avisos');
-    return `\n                        <div class="d-flex align-items-center text-danger text-center">\n                            <div class="fw-bold small w-100">⚠️ No se han podido cargar los avisos</div>\n                        </div>\n                    `;
 }
 
 /**
@@ -123,7 +111,7 @@ export async function initWeather(targetId) {
     const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.VITE_AEMET_API_KEY}`;
 
     // Endpoint de avisos AEMET
-    const urlAvisos = `https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAC77_RSS.xml`;
+    const urlAvisos = '/api/avisos';
 
     try {
         // PASO 1: Obtener la URL temporal de los datos (con reintentos)
