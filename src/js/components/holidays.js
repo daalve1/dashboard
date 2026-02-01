@@ -51,7 +51,7 @@ export async function initHolidays(targetId) {
 
             // Calcular días restantes
             const diffTime = Math.abs(fechaObj - hoy);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1; 
 
             html = `
                 <div class="text-center py-1">
