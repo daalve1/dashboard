@@ -2,6 +2,11 @@ import { mountCard } from '../utils/ui.js';
 import { BIRTHDAYS } from '../constants.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
 
+/**
+ * Inicializa el componente de cumpleaños del año
+ * @param {string} targetId - ID del elemento HTML que va a contener el componente
+ * @returns {undefined}
+ */
 export async function initBirthdays(targetId) {
     const ui = mountCard(targetId, 'Cumpleaños del Año');
     if (!ui) return;
@@ -65,7 +70,7 @@ export async function initBirthdays(targetId) {
             } else if (bd.diasFaltantes === 1) {
                 badge = '<span class="badge bg-warning text-dark">Mañana</span>';
             } else {
-                badge = `<span class="badge bg-info">Faltan ${bd.diasFaltantes} días</span>`;
+                badge = `<span class="badge bg-purple">Faltan ${bd.diasFaltantes} días</span>`;
             }
 
             html += `

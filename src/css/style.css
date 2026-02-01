@@ -1,3 +1,11 @@
+:root {
+    --morado: #6f42c1;
+}
+
+.bg-purple {
+    background-color: var(--morado);
+}
+
 .card {
     border: none;
     border-radius: 12px;

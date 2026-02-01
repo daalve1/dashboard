@@ -1,5 +1,6 @@
 import { mountCard } from '../utils/ui.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
+import { UV_RANGES } from '../constants.js';
 
 /**
  * Mapea los estados de cielo de AEMET a emojis
@@ -18,6 +19,51 @@ function getAemetEmoji(descripcion) {
     if (desc.includes('nieve')) return '❄️';
     if (desc.includes('niebla')) return '🌫️';
     return '🌤️';
+}
+
+/**
+ * Devuelve un string con la recomendación para un riesgo UV según el índice pasado como parámetro.
+ * 
+ * @param {string} riesgo - Índice UV ("Bajo", "Moderado", "Alto", "Muy alto", "Extremo")
+ * @returns {string} - Recomendación para el riesgo UV
+ */
+function obtenerRecomendacion(riesgo) {
+  const tips = {
+    "Bajo": "Puedes permanecer al aire libre sin riesgo.",
+    "Moderado": "Usa protector solar y busca sombra al mediodía.",
+    "Alto": "Usa sombrero, gafas de sol y protector cada 2 horas.",
+    "Muy Alto": "Evita salir en horas centrales. Protección extra.",
+    "Extremo": "¡Peligro! Evita salir. La piel se quema en minutos."
+  };
+  return tips[riesgo];
+}
+
+/**
+ * Devuelve un objeto con la descripción del riesgo UV, el color asociado y una recomendación
+ * según el índice UV pasado como parámetro.
+ * 
+ * @param {number} index - Índice UV
+ * @returns {Object} - Información del riesgo UV, con los siguientes campos:
+ *   - mensaje: string con la descripción del riesgo
+ *   - color: string con el color asociado al riesgo
+ *   - emoji: string con el emoji asociado al riesgo
+ *   - recomendacion: string con la recomendación para el usuario
+ */
+function getUVRisk(indice) {
+  // Redondeamos por si llega un valor decimal
+  const valor = Math.round(indice);
+
+  // Buscamos el objeto que contiene el rango
+  const nivel = UV_RANGES.find(rango => valor >= rango.min && valor <= rango.max);
+
+  if (!nivel) return "Índice no válido";
+
+  return {
+    mensaje: `Riesgo ${nivel.riesgo}`,
+    color: nivel.color,
+    emoji: nivel.icono,
+    recomendacion: obtenerRecomendacion(nivel.riesgo)
+  };
 }
 
 // Constante de reintentos
@@ -147,6 +193,7 @@ export async function initWeather(targetId) {
         const tempMax = prediccion.temperatura.maxima;
         const tempMin = prediccion.temperatura.minima;
         const uvIndice = prediccion.uvMax;
+        const riesgoUV = getUVRisk(uvIndice);
 
         // Obtener valores actuales según la hora
         const temperaturaActual = getValueByHour(horaActual, prediccion.temperatura.dato).value;
@@ -165,11 +212,11 @@ export async function initWeather(targetId) {
                     <span class="text-danger fw-bold">↑ ${tempMax}°</span>
                 </div>
                 <div class="col-6">
-                    <div class="text-muted small d-flex align-items-center h-100">
-                        🌧️ ${precipitacionActual}%<br>
-                        💧 ${humedadActual}%<br>
-                        🌞 ${uvIndice}<br/>
-                        🌬️ ${vientoActual}km/h
+                    <div class="text-muted small pt-3">
+                        <span>🌧️ ${precipitacionActual}%</span><br/>
+                        <span>💧 ${humedadActual}%</span><br/>
+                        <span style="color: ${riesgoUV.color}">🌞 ${uvIndice}</span><br/>
+                        <span>🌬️ ${vientoActual}km/h</span>
                     </div>
                 </div>
             </div>

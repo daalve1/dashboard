@@ -52,9 +52,6 @@ export async function initHolidays(targetId) {
             // Calcular días restantes
             const diffTime = Math.abs(fechaObj - hoy);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            let colorBadge = "bg-primary";
-            if (diffDays <= 7) colorBadge = "bg-success";
 
             html = `
                 <div class="text-center py-1">
@@ -62,7 +59,7 @@ export async function initHolidays(targetId) {
                     <div class="text-primary fw-bold my-2 text-capitalize">
                         📅 ${fechaTexto}
                     </div>
-                    <span class="badge ${colorBadge} rounded-pill">
+                    <span class="badge bg-purple rounded-pill">
                         Faltan ${diffDays} días
                     </span>
                 </div>
