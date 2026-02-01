@@ -1,6 +1,12 @@
 import { mountCard } from '../utils/ui.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
 
+/**
+ * Inicializa la tarjeta de Navidad del año.
+ * 
+ * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
+ * @returns {undefined}
+ */
 export async function initChristmas(targetId) {
     const ui = mountCard(targetId, 'Días para Navidad');
     if (!ui) return;
@@ -37,7 +43,7 @@ export async function initChristmas(targetId) {
 
             html = `
                 <div class="text-center py-1">
-                    <h3 class="fw-bold mb-0 text-dark">Navidad</h3>
+                    <h3 class="fw-bold mb-0 text-dark">Navidad 🎅🏻🎄</h3>
                     <div class="text-primary fw-bold my-2 text-capitalize">
                         📅 ${fechaTexto}
                     </div>
@@ -53,7 +59,6 @@ export async function initChristmas(targetId) {
 
         ui.setContent(`<ul class="list-group list-group-flush text-start">${html}</ul>`);
         ui.setSuccess();
-
     } catch (error) {
         ui.setError('Error API Navidad');
         console.error(error);

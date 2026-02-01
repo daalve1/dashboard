@@ -55,7 +55,7 @@ export async function initHolidays(targetId) {
 
             html = `
                 <div class="text-center py-1">
-                    <h3 class="fw-bold mb-0 text-dark">${proximo.localName}</h3>
+                    <h3 class="fw-bold mb-0 text-dark">${proximo.localName} 🎉</h3>
                     <div class="text-primary fw-bold my-2 text-capitalize">
                         📅 ${fechaTexto}
                     </div>

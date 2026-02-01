@@ -41,7 +41,7 @@ export async function initBirthdays(targetId) {
                     esHoy: diffDays === 0
                 };
             })
-            .filter(bd => bd.diasFaltantes < 30) // Solo cumpleaños en menos de 30 días
+            .filter(bd => bd.diasFaltantes < 35) // Solo cumpleaños en menos de 30 días
             .sort((a, b) => a.diasFaltantes - b.diasFaltantes);
 
         if (cumpleañosPróximos.length === 0) {
@@ -50,7 +50,7 @@ export async function initBirthdays(targetId) {
             return;
         }
 
-        let html = '<div class="list-group list-group-flush">';
+        let html = '<div class="list-group list-group-flush"><h3 class="fw-bold mb-0 text-dark text-center">Cumpleaños 🎂</h3>';
 
         cumpleañosPróximos.forEach(bd => {
             const fecha = bd.fechaObj.toLocaleDateString('es-ES', { 
