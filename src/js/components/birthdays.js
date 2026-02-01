@@ -45,7 +45,7 @@ export async function initBirthdays(targetId) {
             .sort((a, b) => a.diasFaltantes - b.diasFaltantes);
 
         if (cumpleañosPróximos.length === 0) {
-            ui.setContent('<div class="text-muted text-center">No hay cumpleaños en los próximos 30 días</div>');
+            ui.setContent('<div class="text-muted text-center small">No hay cumpleaños en los próximos 30 días</div>');
             ui.setSuccess();
             return;
         }
