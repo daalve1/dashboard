@@ -59,9 +59,9 @@ function getUVRisk(indice) {
   if (!nivel) return "Índice no válido";
 
   return {
-    mensaje: `Riesgo ${nivel.riesgo}`,
+    riesgo: nivel.riesgo,
     color: nivel.color,
-    emoji: nivel.icono,
+    icono: nivel.icono,
     recomendacion: obtenerRecomendacion(nivel.riesgo)
   };
 }
@@ -215,7 +215,7 @@ export async function initWeather(targetId) {
                     <div class="text-muted small pt-3">
                         <span>🌧️ ${precipitacionActual}%</span><br/>
                         <span>💧 ${humedadActual}%</span><br/>
-                        <span style="color: ${riesgoUV.color}">🌞 ${uvIndice}</span><br/>
+                        <span style="color: ${riesgoUV.color}">🌞 ${uvIndice} ${riesgoUV.riesgo}</span><br/>
                         <span>🌬️ ${vientoActual}km/h</span>
                     </div>
                 </div>

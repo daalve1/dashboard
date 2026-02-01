@@ -11,9 +11,9 @@ export const BIRTHDAYS = [
 ];
 
 export const UV_RANGES = [
-  { min: 0,  max: 2,  riesgo: "Bajo",     color: "#28a745", icono: "🟢" },
-  { min: 3,  max: 5,  riesgo: "Moderado", color: "#fbc02d", icono: "🟡" },
-  { min: 6,  max: 7,  riesgo: "Alto",     color: "#f57c00", icono: "🟠" },
-  { min: 8,  max: 10, riesgo: "Muy Alto", color: "#d32f2f", icono: "🔴" },
-  { min: 11, max: 99, riesgo: "Extremo",  color: "#6f42c1", icono: "🟣" }
+  { min: 0,  max: 2,  riesgo: "(bajo)",     color: "#28a745", icono: "🟢" },
+  { min: 3,  max: 5,  riesgo: "(moderado)", color: "#fbc02d", icono: "🟡" },
+  { min: 6,  max: 7,  riesgo: "(alto)",     color: "#f57c00", icono: "🟠" },
+  { min: 8,  max: 10, riesgo: "(muy alto)", color: "#d32f2f", icono: "🔴" },
+  { min: 11, max: 99, riesgo: "(extremo)",  color: "#ff0000", icono: "🟣" }
 ];
