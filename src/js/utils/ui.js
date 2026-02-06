@@ -39,7 +39,7 @@ export function mountCard(targetId, title) {
         setError: (msg) => {
             const dot = container.querySelector('.status-dot');
             if(dot) dot.classList.replace('bg-secondary', 'bg-danger');
-            document.getElementById(`${targetId}-content`).innerHTML = `<p class="text-danger small">${msg}</p>`;
+            document.getElementById(`${targetId}-content`).innerHTML = `<p class="text-danger medium text-center fw-bold">😩 ${msg}</p>`;
         }
     };
 }

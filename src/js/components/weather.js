@@ -304,12 +304,8 @@ function extractAvisos(data) {
     // Si no hemos encontrado ninguna alerta ESPECÍFICA para esa zona
     if (encontrados === 0) {
         html = `
-            <div class="d-flex align-items-center text-success">
-                <span class="fs-2 me-2">🟢</span>
-                <div>
-                    <div class="fw-bold">Sin alertas activas</div>
-                    <div class="small text-muted">${zonaBuscada}</div>
-                </div>
+            <div class="text-center mb-2 p-2">
+                <div class="fw-bold text-muted small">🟢 Sin alertas activas</div>
             </div>
         `;
     }
