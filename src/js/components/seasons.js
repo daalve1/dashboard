@@ -21,7 +21,7 @@ export async function initSeason(targetId) {
                 📅 ${fecha}
             </div>
             <span class="badge bg-purple rounded-pill">
-                Faltan ${diasFaltantes} días para ${estacionSiguiente.split(' ')[0].toLowerCase()}
+                ${diasFaltantes} días
             </span>
         </div>
     `);

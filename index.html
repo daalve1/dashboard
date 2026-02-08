@@ -8,13 +8,18 @@
   <link rel="stylesheet" href="src/css/style.css">
 </head>
 <body class="bg-light" style="overflow-x: hidden; font-size: 1.1em;">
-  <div id="efectos-fondo" class="p-2">
-    <div id="weather-mount"></div>
-    <div id="moon-mount"></div>
-    <div id="holidays-mount"></div>
-    <div id="birthdays-mount"></div>
-    <div id="christmas-mount"></div>
-    <div id="season-mount"></div>
+  <div id="efectos-fondo" class="p-2 m-0">
+    <div id="weather-advices-mount"></div>
+    <div class="masonry-container">
+      <div id="weather-mount" class="masonry-item"></div>
+      <div id="moon-mount" class="masonry-item"></div>
+    </div>
+    <div class="masonry-container">
+      <div id="holidays-mount" class="masonry-item"></div>
+      <div id="christmas-mount" class="masonry-item"></div>
+      <div id="season-mount" class="masonry-item"></div>
+      <div id="birthdays-mount" class="masonry-item"></div>
+    </div>
   </div>
   
   <script type="module" src="src/js/main.js"></script>

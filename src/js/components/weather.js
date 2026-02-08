@@ -2,8 +2,14 @@ import { mountCard } from '../utils/ui.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
 import { UV_RANGES } from '../constants.js';
 
+
 /**
- * Mapea los estados de cielo de AEMET a emojis
+ * Devuelve un emoji según la descripción del tiempo de AEMET
+ * @param {string} descripcion - Descripción del tiempo de AEMET
+ * @returns {string} Un emoji representativo del tiempo
+ * @example getAemetEmoji('despejado') // '☀️'
+ * @example getAemetEmoji('poco nuboso') // '🌤️'
+ * @example getAemetEmoji('lluvia') // '🌧️' y lanza una decoración tipo lluvia en el elemento con id 'weather-mount'
  */
 function getAemetEmoji(descripcion) {
     const desc = descripcion.toLowerCase();
@@ -69,8 +75,14 @@ function getUVRisk(indice) {
 // Constante de reintentos
 const FETCH_MAX_RETRIES = 5;
 
+
 /**
- * Realiza un fetch con reintentos automáticos
+ * Realiza una petición a una URL con un máximo de reintentos en caso de fallo.
+ * 
+ * @param {string} url - URL a la que se realizará la petición
+ * @param {object} [options] - Opciones de la petición (ver documentación de fetch)
+ * @returns {Promise<Response>} - Promesa que se resuelve con la respuesta de la petición
+ * @throws {Error} - Error si falla tras el máximo de reintentos
  */
 async function fetchWithRetry(url, options = {}) {
     let lastError;
@@ -99,21 +111,12 @@ async function fetchWithRetry(url, options = {}) {
     throw lastError;
 }
 
-async function fetchAndProcessAvisos(url) {
-    try {
-        // Añadimos timestamp para evitar caché del navegador
-        const res = await fetch(`${url}?t=${Date.now()}`);
-        if (!res.ok) throw new Error('Error en backend');
-        const text = await res.text();
-        return extractAvisos(text);
-    } catch (e) {
-        console.error(e);
-        return `<div class="text-danger p-1">Error cargando avisos</div>`;
-    }
-}
-
 /**
- * Obtiene el valor actual según la hora del día
+ * Obtiene el valor actual según la hora del día.
+ * 
+ * @param {number} horaActual - Hora actual en formato de 24 horas (0-23)
+ * @param {array} dataArray - Array con los valores a obtener según la hora del día
+ * @returns {any} Valor actual según la hora del día
  */
 function getValueByHour(horaActual, dataArray) {
     const indiceMap = {
@@ -132,8 +135,12 @@ function getValueByHour(horaActual, dataArray) {
     return dataArray[indiceMap[periodo]];
 }
 
+
 /**
- * Obtiene el valor actual para datos con más periodos (lluvia, viento)
+ * Obtiene el valor actual según la hora del día extendida.
+ * @param {number} horaActual - Hora actual en formato de 24 horas (0-23)
+ * @param {array} dataArray - Array con los valores a obtener según la hora del día
+ * @returns {any} Valor actual según la hora del día
  */
 function getValueByHourExtended(horaActual, dataArray) {
     const indiceMap = {
@@ -152,6 +159,11 @@ function getValueByHourExtended(horaActual, dataArray) {
     return dataArray[indiceMap[periodo]];
 }
 
+/**
+ * Inicializa la tarjeta del tiempo.
+ * 
+ * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
+ */
 export async function initWeather(targetId) {
     const ui = mountCard(targetId, 'Meteorología');
     if (!ui) return;
@@ -159,9 +171,6 @@ export async function initWeather(targetId) {
 
     // Endpoint de predicción diaria Torrent
     const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.VITE_AEMET_API_KEY}`;
-
-    // Endpoint de avisos AEMET
-    const urlAvisos = '/api/avisos';
 
     try {
         // PASO 1: Obtener la URL temporal de los datos (con reintentos)
@@ -220,95 +229,11 @@ export async function initWeather(targetId) {
                     </div>
                 </div>
             </div>
-            <div class="mt-3" id="weather-avisos-container">
-                <div class="d-flex justify-content-center py-2">
-                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
-                        <span class="visually-hidden">Cargando avisos...</span>
-                    </div>
-                </div>
-            </div>
         `);
         
         ui.setSuccess();
-        
-        // Cargar avisos en paralelo sin bloquear (2s entre reintentos)
-        fetchAndProcessAvisos(urlAvisos, 2000).then(avisosHTML => {
-            const container = document.getElementById('weather-avisos-container');
-            if (container) container.innerHTML = avisosHTML;
-        }).catch(err => {
-            console.error('Error cargando avisos:', err);
-            const container = document.getElementById('weather-avisos-container');
-            if (container) container.innerHTML = `
-                <div class="d-flex align-items-center text-danger text-center">
-                    <div class="fw-bold small w-100">⚠️ No se han podido cargar los avisos</div>
-                </div>
-            `;
-        });
     } catch (error) {
         ui.setError('Error API Tiempo');
         console.error("Error en Weather:", error);
     }
-}
-
-
-function extractAvisos(data) {
-    const error = data.includes("The requested URL was rejected");
-
-    if (error) {
-        return `
-            <div class="d-flex align-items-center text-danger text-center">
-                <div class="fw-bold small w-100">⚠️ No se han podido cargar los avisos</div>
-            </div>
-        `;
-    }
-
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(data, "text/xml");
-    
-    // 3. Buscar los items (cada aviso es un <item>)
-    const items = xmlDoc.querySelectorAll("item");
-    
-    let html = "";
-    let encontrados = 0;
-        
-    // ZONA QUE BUSCAMOS (Tal cual la escribe AEMET)
-    const zonaBuscada = "Litoral norte de Valencia";
-    const zonaNoBuscada = "Costeros.";
-
-    items.forEach(item => {
-        const title = item.querySelector("title")?.textContent || "";
-        const desc = item.querySelector("description")?.textContent || "";
-
-        // --- EL FILTRO MÁGICO ---
-        // Solo entramos si el título incluye el nombre de tu zona
-        if (title.includes(zonaBuscada) && !title.includes(zonaNoBuscada)) {
-            encontrados++;
-
-            // Detectar color de la alerta
-            let color = "bg-info"; 
-            if (title.toLowerCase().includes("amarillo")) color = "bg-warning";
-            if (title.toLowerCase().includes("naranja")) color = "bg-danger"; // Naranja = Rojo visual
-            if (title.toLowerCase().includes("rojo")) color = "bg-dark";
-
-            html += `
-                <div class="alert ${color} text-white mb-2 p-2 shadow-sm">
-                    <div class="fw-bold small">⚠️ ${title}</div>
-                    <div class="small mt-1" style="font-size: 0.8rem; opacity: 0.9;">
-                        ${desc}
-                    </div>
-                </div>
-            `;
-        }
-    });
-
-    // Si no hemos encontrado ninguna alerta ESPECÍFICA para esa zona
-    if (encontrados === 0) {
-        html = `
-            <div class="text-center mb-2 p-2">
-                <div class="fw-bold text-muted small">🟢 Sin alertas activas</div>
-            </div>
-        `;
-    }
-
-    return html;
 }

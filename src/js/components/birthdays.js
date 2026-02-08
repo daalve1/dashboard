@@ -70,7 +70,7 @@ export async function initBirthdays(targetId) {
             } else if (bd.diasFaltantes === 1) {
                 badge = '<span class="badge bg-warning text-dark">Mañana</span>';
             } else {
-                badge = `<span class="badge bg-purple">Faltan ${bd.diasFaltantes} días</span>`;
+                badge = `<span class="badge bg-purple">${bd.diasFaltantes} días</span>`;
             }
 
             html += `
@@ -80,7 +80,7 @@ export async function initBirthdays(targetId) {
                              style="width: 32px; height: 32px; font-weight: bold;">
                             ${bd.initials}
                         </div>
-                        <div>
+                        <div class="small">
                             <strong>${bd.name}</strong>
                             <div class="text-muted small">${fecha}</div>
                         </div>

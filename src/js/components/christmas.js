@@ -48,7 +48,7 @@ export async function initChristmas(targetId) {
                         📅 ${fechaTexto}
                     </div>
                     <span class="badge bg-purple rounded-pill">
-                        Faltan ${diffDays} días
+                        ${diffDays} días
                     </span>
                 </div>
             `;
