@@ -220,8 +220,8 @@ export async function initWeather(targetId) {
                     <span class="text-primary fw-bold">↓ ${tempMin}°</span>
                     <span class="text-danger fw-bold">↑ ${tempMax}°</span>
                 </div>
-                <div class="col-6">
-                    <div class="text-muted small pt-3">
+                <div class="col-6 pt-3">
+                    <div class="text-muted small">
                         <span>🌧️ ${precipitacionActual}%</span><br/>
                         <span>💧 ${humedadActual}%</span><br/>
                         <span style="color: ${riesgoUV.color}">🌞 ${uvIndice} ${riesgoUV.riesgo}</span><br/>

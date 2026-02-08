@@ -55,12 +55,14 @@ export async function initMoon(targetId) {
 
         // Renderizado
         ui.setContent(`
-            <div class="row align-items-center h-100">
-                <div class="col-4 text-center">
-                    <div style="font-size: 4rem; line-height: 1;">${phaseData.icon}</div>
+            <div class="text-center py-1">
+                <h3 class="fw-bold mb-0 text-dark">${phaseData.text}</h3>
+            </div>
+            <div class="row">
+                <div class="col-6 d-flex justify-content-center align-items-center">
+                    <div style="font-size: 3rem; line-height: 1;">${phaseData.icon}</div>
                 </div>
-                <div class="col-8">
-                    <h3 class="fw-bold mb-0 text-dark">${phaseData.text}</h3>
+                <div class="col-6">
                     <div class="text-muted small">
                         <span>💡 ${illumination}%</span><br/>
                         <span>⬆️ ${moonRise}</span><br/>
