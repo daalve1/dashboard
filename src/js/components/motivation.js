@@ -1,22 +1,6 @@
+import { fetchJson } from '../utils/api.js';
 import { translateText } from '../utils/translate.js';
 import { mountCard } from '../utils/ui.js';
-
-/**
- * 1. Obtiene una frase aleatoria en Inglés desde una API estable
- */
-async function fetchEnglishQuote() {
-    // DummyJSON es muy rápida y tiene CORS habilitado
-    const res = await fetch('https://dummyjson.com/quotes/random');
-    
-    if (!res.ok) throw new Error('Error al obtener la cita');
-    
-    const data = await res.json();
-    // Devuelve objeto: { id: 1, quote: "...", author: "..." }
-    return {
-        text: data.quote,
-        author: data.author
-    };
-}
 
 export async function initMotivation(targetId) {
     const ui = mountCard(targetId, 'Frase del Día');
@@ -26,10 +10,10 @@ export async function initMotivation(targetId) {
 
     try {
         // A. Obtener frase (Inglés)
-        const quoteData = await fetchEnglishQuote();
+        const data = await fetchJson('https://dummyjson.com/quotes/random');
         
         // B. Traducir SOLO el texto (los nombres propios mejor no tocarlos)
-        const translatedText = await translateText(quoteData.text);
+        const translatedText = await translateText(data.quote, 'es');
 
         // C. Renderizar
         ui.setContent(`
@@ -42,7 +26,7 @@ export async function initMotivation(targetId) {
                     </blockquote>
                     
                     <figcaption class="blockquote-footer mt-2 text-muted mb-0">
-                        <cite title="Autor">${quoteData.author}</cite>
+                        <cite title="Autor">${data.author}</cite>
                     </figcaption>
                 </figure>
             </div>

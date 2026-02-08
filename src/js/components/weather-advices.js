@@ -1,123 +1,119 @@
 import { mountCard } from '../utils/ui.js';
+import { CONFIG } from '../constants.js';
 
 /**
- * Fetch data with timeout logic
+ * Obtiene el XML de avisos de forma robusta (con timeout y anti-caché)
  */
-async function fetchAndProcessAvisos(url, timeoutMs = 5000) {
+async function fetchAvisosXml(url) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs);
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
     try {
-        // Añadimos timestamp para evitar caché
-        const res = await fetch(`${url}?t=${Date.now()}`, {
-            signal: controller.signal
+        const res = await fetch(`${url}?t=${Date.now()}`, { 
+            signal: controller.signal,
+            // Header opcional para evitar cachés agresivas
+            headers: { 'Cache-Control': 'no-cache' } 
         });
-        clearTimeout(id);
+        clearTimeout(timeoutId);
 
-        if (!res.ok) throw new Error(`Backend error: ${res.status}`);
-        const text = await res.text();
-        return extractAvisos(text);
-    } catch (e) {
-        clearTimeout(id);
-        console.error("Fallo al obtener avisos:", e);
-        // Devolvemos el HTML de error directamente
-        return `<div class="d-flex align-items-center text-danger justify-content-center p-2">
-                    <div class="fw-bold small">⚠️ Error cargando avisos</div>
-                </div>`;
-    }
-}
-
-export async function initWeatherAdvice(targetId) {
-    const ui = mountCard(targetId, 'Avisos meteorología');
-    if (!ui) {
-        console.error(`No se encontró el elemento destino: ${targetId}`);
-        return;
-    }
-
-    // 1. Mostrar estado de carga inicial
-    ui.setLoading(true);
-
-    // Endpoint (Asegúrate de que tienes un proxy configurado para esto)
-    const urlAvisos = '/api/avisos';
-
-    try {
-        // 2. Obtener los datos PRIMERO (esperamos a la promesa)
-        // Pasamos el timeout de 2000ms que querías usar
-        const avisosHTML = await fetchAndProcessAvisos(urlAvisos, 2000);
-
-        // 3. Una vez tenemos el HTML, actualizamos el contenido DE GOLPE
-        // Esto evita tener que buscar IDs por el documento y es más seguro.
-        ui.setContent(`
-            <div class="row" id="weather-avisos-container">
-                <div class="col-12">
-                    ${avisosHTML}
-                </div>
-            </div>
-        `);
-        
-        // 4. Marcamos como éxito (quita spinners del ui kit si los tiene)
-        ui.setSuccess();
-
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.text();
     } catch (error) {
-        console.error("Error crítico en Weather:", error);
-        ui.setError('Error de conexión');
+        clearTimeout(timeoutId);
+        throw error;
     }
 }
 
-function extractAvisos(data) {
-    // Verificación básica de respuesta HTML de error (común en proxies corporativos o AEMET)
-    if (data.trim().startsWith("<!DOCTYPE") || data.includes("rejected")) {
-         return `<div class="text-muted small text-center">Datos no disponibles temporalmente</div>`;
+/**
+ * Parsea el XML y extrae las alertas relevantes
+ */
+function parseAlerts(xmlString, zonaBuscada) {
+    if (!xmlString || xmlString.trim().startsWith("<!DOCTYPE") || xmlString.includes("rejected")) {
+        throw new Error("Respuesta inválida (Proxy/HTML)");
     }
 
     const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(data, "text/xml");
-    
-    // Verificar si el XML es válido (si no hay etiquetas <rss> o <channel> o <item>)
+    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
     if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
-        return `<div class="text-danger small text-center">Error interpretando datos AEMET</div>`;
+        throw new Error("XML corrupto o mal formado");
     }
 
     const items = xmlDoc.querySelectorAll("item");
-    let html = "";
-    let encontrados = 0;
-    
-    const zonaBuscada = "Litoral norte de Valencia";
-    // Convertimos a minúsculas para comparaciones más robustas
-    const zonaBuscadaLower = zonaBuscada.toLowerCase(); 
+    const alertas = [];
+    const zonaLower = zonaBuscada.toLowerCase();
 
     items.forEach(item => {
         const title = item.querySelector("title")?.textContent || "";
         const desc = item.querySelector("description")?.textContent || "";
         const titleLower = title.toLowerCase();
 
-        // Filtro mejorado
-        if (titleLower.includes(zonaBuscadaLower) && !titleLower.includes("costeros")) {
-            encontrados++;
+        // Lógica de filtrado: Zona coincide y NO es costero (si quieres excluir costeros)
+        if (titleLower.includes(zonaLower) && !titleLower.includes("costeros")) {
+            
+            // Determinar severidad basado en el texto
+            let tipo = "info"; // Default
+            let icono = "⚠️";
+            
+            if (titleLower.includes("amarillo")) { tipo = "warning"; icono = "🟡"; }
+            else if (titleLower.includes("naranja")) { tipo = "danger"; icono = "🟠"; }
+            else if (titleLower.includes("rojo")) { tipo = "dark"; icono = "🔴"; }
 
-            let color = "bg-info"; 
-            if (titleLower.includes("amarillo")) color = "bg-warning";
-            else if (titleLower.includes("naranja")) color = "bg-danger";
-            else if (titleLower.includes("rojo")) color = "bg-dark";
-
-            html += `
-                <div class="alert ${color} text-white mb-0 p-2 shadow-sm">
-                    <div class="fw-bold small">⚠️ ${title}</div>
-                    <div class="small mt-1" style="font-size: 0.8rem; opacity: 0.9;">
-                        ${desc}
-                    </div>
-                </div>
-            `;
+            alertas.push({ title, desc, tipo, icono });
         }
     });
 
-    if (encontrados === 0) {
-        html = `
-            <div class="text-center mb-2 p-2">
-                <div class="fw-bold text-muted small">🟢 Sin alertas para ${zonaBuscada}</div>
-            </div>
-        `;
-    }
+    return alertas;
+}
 
-    return html;
+export async function initWeatherAdvice(targetId) {
+    const ui = mountCard(targetId, 'Avisos Meteorológicos');
+    if (!ui) return;
+    ui.setLoading(true);
+
+    // Configuración (con fallbacks por si no has actualizado constants.js aún)
+    const ENDPOINT = CONFIG?.ALERTS?.ENDPOINT || '/api/avisos';
+    const ZONA = CONFIG?.ALERTS?.ZONE || "Litoral norte de Valencia";
+
+    try {
+        const xmlData = await fetchAvisosXml(ENDPOINT);
+        const alertas = parseAlerts(xmlData, ZONA);
+
+        if (alertas.length === 0) {
+            ui.setContent(`
+                <div class="d-flex flex-column align-items-center justify-content-center py-3 text-muted">
+                    <span class="fs-1">🟢</span>
+                    <small class="fw-bold mt-2">Sin alertas activas</small>
+                    <small style="font-size: 0.7rem">Zona: ${ZONA}</small>
+                </div>
+            `);
+        } else {
+            const html = alertas.map(alerta => `
+                <div class="alert bg-${alerta.tipo} text-white mb-2 p-2 shadow-sm border-0">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="me-2">${alerta.icono}</span>
+                        <div class="fw-bold small" style="line-height: 1.2;">${alerta.title}</div>
+                    </div>
+                    <div class="small opacity-75 ps-4" style="font-size: 0.8rem;">
+                        ${alerta.desc}
+                    </div>
+                </div>
+            `).join('');
+
+            ui.setContent(`<div class="p-1">${html}</div>`);
+        }
+        
+        ui.setSuccess();
+
+    } catch (error) {
+        console.warn("Avisos Error:", error);
+        // Fallback visual elegante en lugar de error rojo estridente
+        ui.setContent(`
+            <div class="text-center py-3 text-secondary opacity-50">
+                <i class="bi bi-cloud-slash fs-4"></i>
+                <div class="small mt-1">No hay datos de avisos</div>
+            </div>
+        `);
+        ui.setSuccess(); // Marcamos éxito para no romper la estética del dashboard
+    }
 }

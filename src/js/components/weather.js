@@ -1,239 +1,105 @@
 import { mountCard } from '../utils/ui.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
-import { UV_RANGES } from '../constants.js';
+import { UV_RANGES, CONFIG } from '../constants.js';
+import { fetchJson } from '../utils/api.js';
 
-
-/**
- * Devuelve un emoji según la descripción del tiempo de AEMET
- * @param {string} descripcion - Descripción del tiempo de AEMET
- * @returns {string} Un emoji representativo del tiempo
- * @example getAemetEmoji('despejado') // '☀️'
- * @example getAemetEmoji('poco nuboso') // '🌤️'
- * @example getAemetEmoji('lluvia') // '🌧️' y lanza una decoración tipo lluvia en el elemento con id 'weather-mount'
- */
 function getAemetEmoji(descripcion) {
     const desc = descripcion.toLowerCase();
-    if (desc.includes('despejado')) return '☀️';
-    if (desc.includes('poco nuboso')) return '🌤️';
-    if (desc.includes('nuboso')) return '☁️';
-    if (desc.includes('cubierto')) return '☁️';
     if (desc.includes('lluvia') || desc.includes('llovizna')) {
-        lanzarDecoracion('weather-mount', 'lluvia');
+        lanzarDecoracion('weather-mount', 'lluvia'); // Ojo: asegúrate que este ID coincide con tu HTML
         return '🌧️';
     }
+    if (desc.includes('despejado')) return '☀️';
+    if (desc.includes('poco nuboso') || desc.includes('intervalos')) return '🌤️';
+    if (desc.includes('nuboso') || desc.includes('cubierto')) return '☁️';
     if (desc.includes('tormenta')) return '⛈️';
     if (desc.includes('nieve')) return '❄️';
-    if (desc.includes('niebla')) return '🌫️';
+    if (desc.includes('niebla') || desc.includes('bruma')) return '🌫️';
     return '🌤️';
 }
 
-/**
- * Devuelve un string con la recomendación para un riesgo UV según el índice pasado como parámetro.
- * 
- * @param {string} riesgo - Índice UV ("Bajo", "Moderado", "Alto", "Muy alto", "Extremo")
- * @returns {string} - Recomendación para el riesgo UV
- */
-function obtenerRecomendacion(riesgo) {
-  const tips = {
-    "Bajo": "Puedes permanecer al aire libre sin riesgo.",
-    "Moderado": "Usa protector solar y busca sombra al mediodía.",
-    "Alto": "Usa sombrero, gafas de sol y protector cada 2 horas.",
-    "Muy Alto": "Evita salir en horas centrales. Protección extra.",
-    "Extremo": "¡Peligro! Evita salir. La piel se quema en minutos."
-  };
-  return tips[riesgo];
-}
-
-/**
- * Devuelve un objeto con la descripción del riesgo UV, el color asociado y una recomendación
- * según el índice UV pasado como parámetro.
- * 
- * @param {number} index - Índice UV
- * @returns {Object} - Información del riesgo UV, con los siguientes campos:
- *   - mensaje: string con la descripción del riesgo
- *   - color: string con el color asociado al riesgo
- *   - emoji: string con el emoji asociado al riesgo
- *   - recomendacion: string con la recomendación para el usuario
- */
 function getUVRisk(indice) {
-  // Redondeamos por si llega un valor decimal
-  const valor = Math.round(indice);
-
-  // Buscamos el objeto que contiene el rango
-  const nivel = UV_RANGES.find(rango => valor >= rango.min && valor <= rango.max);
-
-  if (!nivel) return "Índice no válido";
-
-  return {
-    riesgo: nivel.riesgo,
-    color: nivel.color,
-    icono: nivel.icono,
-    recomendacion: obtenerRecomendacion(nivel.riesgo)
-  };
-}
-
-// Constante de reintentos
-const FETCH_MAX_RETRIES = 5;
-
-
-/**
- * Realiza una petición a una URL con un máximo de reintentos en caso de fallo.
- * 
- * @param {string} url - URL a la que se realizará la petición
- * @param {object} [options] - Opciones de la petición (ver documentación de fetch)
- * @returns {Promise<Response>} - Promesa que se resuelve con la respuesta de la petición
- * @throws {Error} - Error si falla tras el máximo de reintentos
- */
-async function fetchWithRetry(url, options = {}) {
-    let lastError;
-    
-    for (let attempt = 1; attempt <= FETCH_MAX_RETRIES; attempt++) {
-        try {
-            const response = await fetch(url, options);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            if (attempt > 1) {
-                console.log(`[Fetch] ✓ Éxito en intento ${attempt}/${FETCH_MAX_RETRIES}`);
-            }
-            return response;
-        } catch (error) {
-            lastError = error;
-            console.warn(`[Fetch] ✗ Intento ${attempt}/${FETCH_MAX_RETRIES} falló: ${error.message}`);
-            if (attempt < FETCH_MAX_RETRIES) {
-                // Esperar 1 segundo antes de reintentar (APIs públicas)
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
-    }
-    
-    console.error(`[Fetch] ✗ Falló tras ${FETCH_MAX_RETRIES} intentos`);
-    throw lastError;
+    const valor = Math.round(indice);
+    const nivel = UV_RANGES.find(r => valor >= r.min && valor <= r.max) || UV_RANGES[0];
+    return { ...nivel, indice: valor };
 }
 
 /**
- * Obtiene el valor actual según la hora del día.
- * 
- * @param {number} horaActual - Hora actual en formato de 24 horas (0-23)
- * @param {array} dataArray - Array con los valores a obtener según la hora del día
- * @returns {any} Valor actual según la hora del día
+ * Extrae el valor correcto del array de periodos de AEMET según la hora actual.
+ * AEMET divide el día en periodos de 6h.
  */
-function getValueByHour(horaActual, dataArray) {
-    const indiceMap = {
-        early: 0,    // 0-5h
-        morning: 1,  // 6-11h
-        afternoon: 2, // 12-17h
-        evening: 3   // 18-23h
-    };
+function getPeriodValue(hora, datos, esDatoExtendido = false) {
+    // Índices AEMET: 0-6h, 6-12h, 12-18h, 18-24h
+    // Nota: Los arrays de AEMET a veces tienen longitud 4 (periodos) o 24 (horas) o 1 (dato único).
+    // Asumimos estructura estándar de predicción diaria.
     
-    let periodo;
-    if (horaActual < 6) periodo = 'early';
-    else if (horaActual < 12) periodo = 'morning';
-    else if (horaActual < 18) periodo = 'afternoon';
-    else periodo = 'evening';
+    if (!Array.isArray(datos) || datos.length === 0) return 0;
     
-    return dataArray[indiceMap[periodo]];
+    // Si hay un solo dato para todo el día
+    if (datos.length === 1) return datos[0].value || datos[0].velocidad || 0;
+
+    let periodoIndex;
+    if (hora < 6) periodoIndex = 0;
+    else if (hora < 12) periodoIndex = 1;
+    else if (hora < 18) periodoIndex = 2;
+    else periodoIndex = 3;
+
+    // A veces AEMET devuelve arrays de 7 elementos para viento/precipitacion extendida
+    // Ajuste defensivo: buscamos el periodo que coincida o el último disponible
+    const dato = datos[Math.min(periodoIndex, datos.length - 1)];
+    
+    return dato.value !== undefined ? dato.value : (dato.velocidad || 0);
 }
 
-
-/**
- * Obtiene el valor actual según la hora del día extendida.
- * @param {number} horaActual - Hora actual en formato de 24 horas (0-23)
- * @param {array} dataArray - Array con los valores a obtener según la hora del día
- * @returns {any} Valor actual según la hora del día
- */
-function getValueByHourExtended(horaActual, dataArray) {
-    const indiceMap = {
-        early: 3,    // 0-5h
-        morning: 4,  // 6-11h
-        afternoon: 5, // 12-17h
-        evening: 6   // 18-23h
-    };
-    
-    let periodo;
-    if (horaActual < 6) periodo = 'early';
-    else if (horaActual < 12) periodo = 'morning';
-    else if (horaActual < 18) periodo = 'afternoon';
-    else periodo = 'evening';
-    
-    return dataArray[indiceMap[periodo]];
-}
-
-/**
- * Inicializa la tarjeta del tiempo.
- * 
- * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
- */
 export async function initWeather(targetId) {
     const ui = mountCard(targetId, 'Meteorología');
     if (!ui) return;
     ui.setLoading(true);
 
-    // Endpoint de predicción diaria Torrent
-    const urlPrediccion = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/46244?api_key=${import.meta.env.VITE_AEMET_API_KEY}`;
+    const apiKey = import.meta.env.VITE_AEMET_API_KEY;
+    const urlMunicipio = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/${CONFIG.LOCATION.AEMET_ID}?api_key=${apiKey}`;
 
     try {
-        // PASO 1: Obtener la URL temporal de los datos (con reintentos)
-        const resPrediccion = await fetchWithRetry(urlPrediccion, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
-        });
+        // 1. Obtener URL de datos
+        const resMeta = await fetchJson(urlMunicipio);
+        if (resMeta.estado !== 200) throw new Error(resMeta.descripcion);
 
-        const infoPrediccion = await resPrediccion.json();
-
-        // Verificamos si la API de AEMET nos ha dado el OK
-        if (infoPrediccion.estado !== 200) {
-            throw new Error(infoPrediccion.descripcion || 'Error en la API Predicción');
-        }
-
-        // PASO 2: Obtener los datos reales desde la URL que nos devuelve AEMET
-        const resPrediccionData = await fetchWithRetry(infoPrediccion.datos, {});
-        const dataRawPrediccion = await resPrediccionData.json();
+        // 2. Obtener datos reales
+        const dataRaw = await fetchJson(resMeta.datos);
+        const prediccionHoy = dataRaw[0].prediccion.dia[0];
         
-        // AEMET devuelve un array, el primer elemento [0] es el municipio solicitado
-        // y dentro de prediccion.dia[0] tenemos los datos de hoy
-        const prediccion = dataRawPrediccion[0].prediccion.dia[0];
+        // Procesar datos
+        const hora = new Date().getHours();
+        const estado = prediccionHoy.estadoCielo[0].descripcion || "";
+        const riesgoUV = getUVRisk(prediccionHoy.uvMax);
+        
+        // Usamos la nueva función helper más segura
+        const tempActual = getPeriodValue(hora, prediccionHoy.temperatura.dato);
+        const lluviaProb = getPeriodValue(hora, prediccionHoy.probPrecipitacion);
+        const humedad = getPeriodValue(hora, prediccionHoy.humedadRelativa.dato);
+        const viento = getPeriodValue(hora, prediccionHoy.viento);
 
-        // Obtener hora actual
-        const horaActual = new Date().getHours();
-
-        const estado = prediccion.estadoCielo[0].descripcion;
-        const emoji = getAemetEmoji(estado);
-        const tempMax = prediccion.temperatura.maxima;
-        const tempMin = prediccion.temperatura.minima;
-        const uvIndice = prediccion.uvMax;
-        const riesgoUV = getUVRisk(uvIndice);
-
-        // Obtener valores actuales según la hora
-        const temperaturaActual = getValueByHour(horaActual, prediccion.temperatura.dato).value;
-        const humedadActual = getValueByHour(horaActual, prediccion.humedadRelativa.dato).value;
-        const precipitacionActual = getValueByHourExtended(horaActual, prediccion.probPrecipitacion).value;
-        const vientoActual = getValueByHourExtended(horaActual, prediccion.viento).velocidad;
-
-        // Renderizado del contenido del tiempo (sin esperar a avisos)
         ui.setContent(`
             <div class="row">
                 <div class="col-6 text-center">
-                    <div class="fs-1 fw-bold">${emoji}</div>
-                    <div class="fs-1 fw-bold">${temperaturaActual}°C</div>
-                    
-                    <span class="text-primary fw-bold">↓ ${tempMin}°</span>
-                    <span class="text-danger fw-bold">↑ ${tempMax}°</span>
+                    <div class="fs-1 fw-bold">${getAemetEmoji(estado)}</div>
+                    <div class="fs-1 fw-bold">${tempActual}°C</div>
+                    <span class="text-primary fw-bold">↓ ${prediccionHoy.temperatura.minima}°</span>
+                    <span class="text-danger fw-bold">↑ ${prediccionHoy.temperatura.maxima}°</span>
                 </div>
                 <div class="col-6 pt-3">
                     <div class="text-muted small">
-                        <span>🌧️ ${precipitacionActual}%</span><br/>
-                        <span>💧 ${humedadActual}%</span><br/>
-                        <span style="color: ${riesgoUV.color}">🌞 ${uvIndice} ${riesgoUV.riesgo}</span><br/>
-                        <span>🌬️ ${vientoActual}km/h</span>
+                        <span>🌧️ ${lluviaProb}%</span><br/>
+                        <span>💧 ${humedad}%</span><br/>
+                        <span style="color: ${riesgoUV.color}">🌞 ${riesgoUV.indice} ${riesgoUV.riesgo}</span><br/>
+                        <span>🌬️ ${viento}km/h</span>
                     </div>
                 </div>
             </div>
         `);
-        
         ui.setSuccess();
+
     } catch (error) {
         ui.setError('Error API Tiempo');
-        console.error("Error en Weather:", error);
     }
 }
