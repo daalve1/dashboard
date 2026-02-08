@@ -51,3 +51,7 @@ export const ALERTS = {
   ZONE: "Litoral norte de Valencia",
   ENDPOINT: "/api/avisos"
 }
+
+export const HOROSCOPE = {
+  ENDPOINT: "/api/horoscopo",
+}

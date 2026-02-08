@@ -3,30 +3,41 @@ import { mountCard } from '../utils/ui.js';
 import { CONFIG } from '../constants.js';
 import { fetchJson } from '../utils/api.js';
 
+async function fetchHoroscopo(url) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    try {
+        const res = await fetch(`${url}`, { 
+            signal: controller.signal,
+            // Header opcional para evitar cachés agresivas
+            headers: { 'Cache-Control': 'no-cache' } 
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
+}
+
 export async function initHoroscope(targetId) {
-    const { SPANISH, ENGLISH, ICON } = CONFIG.ZODIAC_SIGN;
+    const { SPANISH, ICON } = CONFIG.ZODIAC_SIGN;
     const ui = mountCard(targetId, `Horóscopo ${SPANISH}`);
     if (!ui) return;
 
     ui.setLoading(true);
 
     try {
-        // Usamos el cliente HTTP robusto (allorigins proxy por si acaso)
-        const targetUrl = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${ENGLISH}&day=today`;
+        const ENDPOINT = CONFIG?.HOROSCOPE?.ENDPOINT || '/api/horoscopo';
         
         let horoscopeText = "";
         
-        try {
-            const data = await fetchJson(targetUrl);
-            horoscopeText = data.data.horoscope_data;
-        } catch (e) {
-            // Fallback a proxy si falla directo (para móviles/CORS)
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-            const proxyData = await fetchJson(proxyUrl);
-            const parsed = JSON.parse(proxyData.contents);
-            horoscopeText = parsed.data.horoscope_data;
-        }
-
+        const data = await fetchHoroscopo(ENDPOINT);
+        horoscopeText = data.data.horoscope_data;
+        
         const translated = await translateText(horoscopeText);
 
         ui.setContent(`
