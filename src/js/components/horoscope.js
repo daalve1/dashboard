@@ -110,6 +110,6 @@ export async function initHoroscope(targetId) {
 
     } catch (error) {
         console.error("Error API horóscopo");
-        ui.setError('No se pudo conectar con los astros.', error);
+        ui.setError('No se pudo conectar con los astros');
     }
 }
