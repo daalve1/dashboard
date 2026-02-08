@@ -1,3 +1,4 @@
+import { translateText } from '../utils/translate.js';
 import { mountCard } from '../utils/ui.js';
 
 /**
@@ -15,29 +16,6 @@ async function fetchEnglishQuote() {
         text: data.quote,
         author: data.author
     };
-}
-
-/**
- * 2. Traduce el texto usando MyMemory API
- * (Reutilizamos la lógica del horóscopo)
- */
-async function translateText(text) {
-    try {
-        const encodedText = encodeURIComponent(text);
-        // Pedimos traducción de Inglés (en) a Español (es)
-        const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=en|es`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        if (data.responseStatus === 200 && data.responseData.translatedText) {
-            return data.responseData.translatedText;
-        }
-        return text; // Si falla, devolvemos original
-    } catch (e) {
-        console.warn("Fallo traducción:", e);
-        return text; // Fallback
-    }
 }
 
 export async function initMotivation(targetId) {

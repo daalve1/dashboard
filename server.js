@@ -19,7 +19,6 @@ app.get('/api/avisos', async (req, res) => {
         
         const response = await fetch(urlAemet, {
             headers: {
-                // Importante: Nos hacemos pasar por un navegador real
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'application/xml, text/xml, */*'
             }
@@ -42,8 +41,6 @@ app.get('/api/avisos', async (req, res) => {
 });
 
 // 2. SERVIR TU FRONTEND (Archivos estáticos)
-// Si usas Vite, normalmente la carpeta de salida es 'dist'. 
-// Si no usas Vite y tienes el index.html en la raíz, cambia 'dist' por '.' o la carpeta que uses.
 app.use(express.static('dist')); 
 
 // Cualquier otra petición devuelve el index.html (para Single Page Apps)
