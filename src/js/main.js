@@ -6,6 +6,7 @@ import { initSeason } from './components/seasons.js';
 import { initMoon } from './components/moon.js';
 import { initWeatherAdvice } from './components/weather-advices.js';
 import { initMotivation } from './components/motivation.js';
+import { initHoroscope } from './components/horoscope.js';
 
 // Inicializar componentes
 initWeather('weather-mount');
@@ -16,3 +17,4 @@ initSeason('season-mount');
 initMoon('moon-mount');
 initWeatherAdvice('weather-advices-mount');
 initMotivation('motivation-mount');
+initHoroscope('horoscope-mount');
