@@ -75,7 +75,7 @@ export async function initHoroscope(targetId) {
         ui.setSuccess();
 
     } catch (error) {
-        console.error("Error horóscopo real:", error);
-        ui.setError('No se pudo conectar con los astros');
+        console.error("Error API horóscopo");
+        ui.setError('No se pudo conectar con los astros.', error);
     }
 }
