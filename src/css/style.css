@@ -29,11 +29,10 @@
 }
 
 .masonry-container {
-    column-count: 2; /* Crea dos columnas tipo periódico */
-    column-gap: 1rem; /* Espacio entre columnas */
+    column-count: 2;
+    column-gap: 1rem;
 }
 
 .masonry-container > div {
-    break-inside: avoid; /* Evita que un div se corte por la mitad */
-    margin-bottom: 1rem; /* Espacio debajo de cada elemento */
+    break-inside: avoid;
 }

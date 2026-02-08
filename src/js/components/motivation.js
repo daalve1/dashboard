@@ -55,7 +55,7 @@ export async function initMotivation(targetId) {
 
         // C. Renderizar
         ui.setContent(`
-            <div class="d-flex flex-column h-100 justify-content-center p-3 text-center">
+            <div class="d-flex flex-column h-100 justify-content-center p-1 text-center">
                 <figure class="mb-0">
                     <blockquote class="blockquote">
                         <p class="mb-3 fst-italic fs-5 text-dark">

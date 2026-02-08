@@ -3,16 +3,50 @@ import { mountCard } from '../utils/ui.js';
 /**
  * 1. Obtiene el horóscopo en Inglés
  */
+/**
+ * 1. Obtiene el horóscopo en Inglés (Versión Blindada para Móvil)
+ */
 async function fetchEnglishHoroscope(sign) {
-    // API pública y gratuita (sin CORS usualmente)
-    const url = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${sign}&day=today`;
-    
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Error en API Horóscopo');
-    
-    const data = await res.json();
-    // La estructura suele ser data.data.horoscope_data
-    return data.data.horoscope_data;
+    const baseUrl = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${sign}&day=today`;
+    // Añadimos timestamp para evitar caché agresiva en móviles
+    const urlDirecta = `${baseUrl}&t=${Date.now()}`;
+
+    try {
+        // INTENTO 1: Directo con política de privacidad estricta
+        // 'no-referrer' es la clave para que funcione en móviles muchas veces
+        const res = await fetch(urlDirecta, {
+            method: 'GET',
+            referrerPolicy: 'no-referrer', // <--- ESTO ES LA CLAVE EN MÓVIL
+            cache: 'no-store'
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            return data.data.horoscope_data;
+        }
+        throw new Error("Bloqueo móvil directo");
+
+    } catch (e) {
+        console.warn("Fallo directo en móvil, activando túnel proxy...", e);
+        
+        // INTENTO 2: Usar un Proxy (AllOrigins)
+        // Esto "engaña" a la API haciéndole creer que la petición viene del servidor del proxy, no de tu móvil
+        try {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(baseUrl)}`;
+            const resProxy = await fetch(proxyUrl);
+            const dataProxy = await resProxy.json();
+            
+            if (dataProxy.contents) {
+                const parsedData = JSON.parse(dataProxy.contents);
+                return parsedData.data.horoscope_data;
+            }
+        } catch (proxyError) {
+            console.error("Falló también el proxy", proxyError);
+        }
+
+        // INTENTO 3 (Último recurso): Devolver texto genérico para que no se rompa la UI
+        return "The stars are aligning to bring you new opportunities. Trust your intuition today.";
+    }
 }
 
 /**

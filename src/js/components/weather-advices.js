@@ -101,7 +101,7 @@ function extractAvisos(data) {
             else if (titleLower.includes("rojo")) color = "bg-dark";
 
             html += `
-                <div class="alert ${color} text-white mb-2 p-2 shadow-sm">
+                <div class="alert ${color} text-white mb-0 p-2 shadow-sm">
                     <div class="fw-bold small">⚠️ ${title}</div>
                     <div class="small mt-1" style="font-size: 0.8rem; opacity: 0.9;">
                         ${desc}
