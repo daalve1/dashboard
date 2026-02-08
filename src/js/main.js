@@ -5,6 +5,7 @@ import { initChristmas } from './components/christmas.js';
 import { initSeason } from './components/seasons.js';
 import { initMoon } from './components/moon.js';
 import { initWeatherAdvice } from './components/weather-advices.js';
+import { initMotivation } from './components/motivation.js';
 
 // Inicializar componentes
 initWeather('weather-mount');
@@ -14,3 +15,4 @@ initChristmas('christmas-mount');
 initSeason('season-mount');
 initMoon('moon-mount');
 initWeatherAdvice('weather-advices-mount');
+initMotivation('motivation-mount');
