@@ -30,9 +30,9 @@ export async function initHoroscope(targetId) {
         const translated = await translateText(horoscopeText);
 
         ui.setContent(`
-            <div class="text-center py-1">
-                <h3 class="fw-bold mb-0 text-dark">${SPANISH} ${ICON}</h3>
-                <p class="card-text text-secondary mt-2" style="font-size: 0.95rem; line-height: 1.5;">
+            <div class=" py-1">
+                <h3 class="fw-bold mb-0 text-center text-dark">${SPANISH} ${ICON}</h3>
+                <p class="text-secondary text-justify mt-2" style="font-size: 0.95rem; line-height: 1.5;">
                     ${translated}
                 </p>
             </div>
@@ -40,6 +40,6 @@ export async function initHoroscope(targetId) {
         ui.setSuccess();
 
     } catch (error) {
-        ui.setError('Error API horóscopo');
+        ui.setError('Error API horóscopo', error);
     }
 }

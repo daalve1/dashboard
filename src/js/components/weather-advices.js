@@ -89,12 +89,12 @@ export async function initWeatherAdvice(targetId) {
             `);
         } else {
             const html = alertas.map(alerta => `
-                <div class="alert bg-${alerta.tipo} text-white mb-2 p-2 shadow-sm border-0">
+                <div class="alert bg-${alerta.tipo} text-white mb-0 p-2 shadow-sm border-0">
                     <div class="d-flex align-items-center mb-1">
                         <span class="me-2">${alerta.icono}</span>
                         <div class="fw-bold small" style="line-height: 1.2;">${alerta.title}</div>
                     </div>
-                    <div class="small opacity-75 ps-4" style="font-size: 0.8rem;">
+                    <div class="small mt-1">
                         ${alerta.desc}
                     </div>
                 </div>

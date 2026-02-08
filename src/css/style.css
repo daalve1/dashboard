@@ -36,3 +36,7 @@
 .masonry-container > div {
     break-inside: avoid;
 }
+
+.text-justify {
+  text-align: justify;
+}
