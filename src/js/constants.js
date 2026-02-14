@@ -4,12 +4,6 @@ export const CONFIG = {
     AEMET_ID: "46244",
     LAT_LON: "39.43, -0.47"
   },
-  ZODIAC_SIGN: {
-    ENGLISH: "sagittarius",
-    SPANISH: "Sagitario",
-    ICON: "♐",
-    ELEMENT: "Fuego"
-  },
   API: {
     TIMEOUT: 5000,
     RETRIES: 3
@@ -49,9 +43,21 @@ export const MOON_PHASES = {
 
 export const ALERTS = {
   ZONE: "Litoral norte de Valencia",
-  ENDPOINT: "/api/avisos"
+  ENDPOINT: "/api/avisos",
+  STYLES: {
+    AMARILLO: 'linear-gradient(135deg, #ffca28 0%, #ffb300 100%)',
+    NARANJA: 'linear-gradient(135deg, #fd7e14 0%, #f76707 100%)',
+    ROJO: 'linear-gradient(135deg, #fa5252 0%, #e03131 100%)',
+    DEFAULT: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+  }
 }
 
 export const HOROSCOPE = {
   ENDPOINT: "/api/horoscopo",
+  ZODIAC_SIGN: {
+    ENGLISH: "sagittarius",
+    SPANISH: "Sagitario",
+    ICON: "♐",
+    ELEMENT: "Fuego"
+  },
 }

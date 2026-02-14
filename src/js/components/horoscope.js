@@ -1,7 +1,6 @@
 import { translateText } from '../utils/translate.js';
 import { mountCard } from '../utils/ui.js';
-import { CONFIG } from '../constants.js';
-import { fetchJson } from '../utils/api.js';
+import { HOROSCOPE } from '../constants.js';
 
 async function fetchHoroscopo(url) {
     const controller = new AbortController();
@@ -24,14 +23,14 @@ async function fetchHoroscopo(url) {
 }
 
 export async function initHoroscope(targetId) {
-    const { SPANISH, ICON } = CONFIG.ZODIAC_SIGN;
+    const { SPANISH, ICON } = HOROSCOPE.ZODIAC_SIGN;
     const ui = mountCard(targetId, `Horóscopo ${SPANISH}`);
     if (!ui) return;
 
     ui.setLoading(true);
 
     try {
-        const ENDPOINT = CONFIG?.HOROSCOPE?.ENDPOINT || '/api/horoscopo';
+        const ENDPOINT = HOROSCOPE.ENDPOINT;
         
         let horoscopeText = "";
         
