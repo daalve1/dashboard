@@ -2,12 +2,7 @@ import { mountCard } from '../utils/ui.js';
 import { ALERTS } from '../constants.js';
 
 /**
- * Fetches XML from AEMET's weather warnings API endpoint.
- * Adds a random timestamp to the URL to avoid caching.
- * Uses AbortController to cancel the request after 5 seconds.
- * Returns the response text if successful, otherwise throws an error.
- * @param {string} url - URL of the AEMET endpoint to use.
- * @returns {Promise<string>} - Promise resolving to the response text if successful.
+ * Obtiene el XML de avisos de forma robusta
  */
 async function fetchAvisosXml(url) {
     const controller = new AbortController();
@@ -26,21 +21,6 @@ async function fetchAvisosXml(url) {
     }
 }
 
-/**
- * Parsea el XML de avisos para obtener una lista de alertas
- * para una zona determinada.
- * 
- * @param {string} xmlString - El contenido XML de los avisos
- * @param {string} zonaBuscada - La zona para la que se desean obtener los avisos
- * 
- * @returns {Array} - Una lista de objetos con la siguiente estructura:
- * {
- *   fenomeno: string,
- *   inicio: string,
- *   fin: string,
- *   bg: string
- * }
- */
 function parseAlerts(xmlString, zonaBuscada) {
     if (!xmlString || xmlString.trim().startsWith("<!DOCTYPE")) return [];
     
@@ -61,11 +41,17 @@ function parseAlerts(xmlString, zonaBuscada) {
             const matches = [...descRaw.matchAll(dateRegex)];
 
             if (matches.length >= 2) {
+                // Parsear Fecha Inicio
+                const [hIni, mIni] = matches[0][1].split(':');
+                const fechaInicio = new Date(matches[0][4], matches[0][3] - 1, matches[0][2], hIni, mIni);
+
+                // Parsear Fecha Fin
                 const [hFin, mFin] = matches[1][1].split(':');
                 const fechaFin = new Date(matches[1][4], matches[1][3] - 1, matches[1][2], hFin, mFin);
+                
+                // Filtrar si ya caducó
                 if (fechaFin < ahora) return;
 
-                // Selección de estilo desde constantes
                 let bg = styles.DEFAULT;
                 if (titleLower.includes("amarillo")) bg = styles.AMARILLO;
                 else if (titleLower.includes("naranja")) bg = styles.NARANJA;
@@ -75,14 +61,17 @@ function parseAlerts(xmlString, zonaBuscada) {
                 
                 alertas.push({
                     fenomeno: fenomeno.toLowerCase(),
-                    inicio: `${matches[0][1]} (${matches[0][2]}/${matches[0][3]})`,
-                    fin: `${matches[1][1]} (${matches[1][2]}/${matches[1][3]})`,
+                    inicioStr: `${matches[0][1]} (${matches[0][2]}/${matches[0][3]})`,
+                    finStr: `${matches[1][1]} (${matches[1][2]}/${matches[1][3]})`,
+                    fechaInicio: fechaInicio, // Guardamos el objeto Date para ordenar
                     bg: bg
                 });
             }
         }
     });
-    return alertas;
+
+    // ORDENAR: De más reciente (más cercano al presente) a más antiguo (futuro lejano)
+    return alertas.sort((a, b) => a.fechaInicio - b.fechaInicio);
 }
 
 export async function initWeatherAdvice(targetId) {
@@ -116,23 +105,23 @@ export async function initWeatherAdvice(targetId) {
                         <div class="d-flex align-items-center justify-content-between bg-black bg-opacity-10 rounded-3 p-2" style="font-size: 0.75rem;">
                             <div class="text-center flex-fill">
                                 <div class="opacity-75" style="font-size: 0.6rem;">INICIO</div>
-                                <div class="fw-bold">${alerta.inicio}</div>
+                                <div class="fw-bold">${alerta.inicioStr}</div>
                             </div>
                             <div class="px-2 opacity-25">|</div>
                             <div class="text-center flex-fill">
                                 <div class="opacity-75" style="font-size: 0.6rem;">FINALIZA</div>
-                                <div class="fw-bold">${alerta.fin}</div>
+                                <div class="fw-bold">${alerta.finStr}</div>
                             </div>
                         </div>
                     </div>
                 </div>
             `).join('');
 
-            ui.setContent(`<div class="p-2">${html}</div>`);
+            ui.setContent(`<div class="p-1">${html}</div>`);
         }
         ui.setSuccess();
     } catch (error) {
         console.error(error);
-        ui.setError('Error API Avisos');
+        ui.setError('Error API Avisos meteorológicos');
     }
 }

@@ -1,5 +1,4 @@
 import { fetchJson } from '../utils/api.js';
-import { translateText } from '../utils/translate.js';
 import { mountCard } from '../utils/ui.js';
 
 export async function initMotivation(targetId) {
@@ -9,34 +8,36 @@ export async function initMotivation(targetId) {
     ui.setLoading(true);
 
     try {
-        // A. Obtener frase (Inglés)
-        const data = await fetchJson('https://dummyjson.com/quotes/random');
-        
-        // B. Traducir SOLO el texto (los nombres propios mejor no tocarlos)
-        const translatedText = await translateText(data.quote, 'es');
+        const randomCategory = Math.random() < 0.5 ? 1 : 2; 
+        const data = await fetchJson(`https://www.positive-api.online/phrases/esp?category_id=${randomCategory}`);
+        const phraseData = data[Math.floor(Math.random() * data.length)];
 
-        // C. Renderizar
         ui.setContent(`
-            <div class="d-flex flex-column h-100 justify-content-center p-1 text-center">
-                <figure class="mb-0">
-                    <blockquote class="blockquote">
-                        <p class="mb-3 fst-italic fs-5 text-dark">
-                            "${translatedText}"
+            <div class="d-flex flex-column h-100 p-1 text-white justify-content-center">
+                <div class="lh-1" style="font-size: 3rem; font-family: serif; margin-bottom: -1.5rem;">
+                    “
+                </div>
+                
+                <div class="px-3">
+                    <blockquote class="blockquote mb-0 text-center">
+                        <p class="fs-5" style="line-height: 1.5; font-style: italic;">
+                            ${phraseData.text}
                         </p>
+                        <figcaption class="blockquote-footer mt-1 mb-0 fs-6" style="text-align: right; margin-right: 2rem;">
+                            ${phraseData.author || 'Anónimo'}
+                        </figcaption>
                     </blockquote>
-                    
-                    <figcaption class="blockquote-footer mt-2 text-muted mb-0">
-                        <cite title="Autor">${data.author}</cite>
-                    </figcaption>
-                </figure>
+                </div>
+
+                <div class="lh-1 text-end" style="font-size: 3rem; font-family: serif; margin-top: -1.5rem;">
+                    ”
+                </div>
             </div>
         `);
         
         ui.setSuccess();
 
     } catch (error) {
-        console.error("Error motivación:", error);
-        // Fallback en caso de error total
-        ui.setError("El éxito consiste en ir de fracaso en fracaso sin perder el entusiasmo.");
+        ui.setError('Error API Frases motivacionales');
     }
 }
