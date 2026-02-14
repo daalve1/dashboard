@@ -45,10 +45,10 @@ export const ALERTS = {
   ZONE: "Litoral norte de Valencia",
   ENDPOINT: "/api/avisos",
   STYLES: {
-    AMARILLO: 'linear-gradient(135deg, #ffca28 0%, #ffb300 100%)',
-    NARANJA: 'linear-gradient(135deg, #fd7e14 0%, #f76707 100%)',
-    ROJO: 'linear-gradient(135deg, #fa5252 0%, #e03131 100%)',
-    DEFAULT: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+    AMARILLO: '#ffca28',
+    NARANJA: '#ff953d',
+    ROJO: '#fa5252',
+    DEFAULT: '#6c757d'
   }
 }
 
