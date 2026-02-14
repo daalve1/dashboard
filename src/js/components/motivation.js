@@ -13,8 +13,8 @@ export async function initMotivation(targetId) {
         const phraseData = data[Math.floor(Math.random() * data.length)];
 
         ui.setContent(`
-            <div class="d-flex flex-column h-100 p-1 text-white justify-content-center">
-                <div class="lh-1" style="font-size: 3rem; font-family: serif; margin-bottom: -1.5rem;">
+            <div class="d-flex flex-column h-100 p-2 text-white justify-content-center bg-purple">
+                <div class="lh-1" style="font-size: 4rem; font-family: serif; margin-bottom: -2rem;">
                     “
                 </div>
                 
@@ -23,13 +23,13 @@ export async function initMotivation(targetId) {
                         <p class="fs-5" style="line-height: 1.5; font-style: italic;">
                             ${phraseData.text}
                         </p>
-                        <figcaption class="blockquote-footer mt-1 mb-0 fs-6" style="text-align: right; margin-right: 2rem;">
+                        <figcaption class="blockquote-footer mt-1 mb-0 fs-6 text-white" style="text-align: right; margin-right: 2rem;">
                             ${phraseData.author || 'Anónimo'}
                         </figcaption>
                     </blockquote>
                 </div>
 
-                <div class="lh-1 text-end" style="font-size: 3rem; font-family: serif; margin-top: -1.5rem;">
+                <div class="lh-1 text-end" style="font-size: 3rem; font-family: serif; margin-top: -2.5rem;">
                     ”
                 </div>
             </div>

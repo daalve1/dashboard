@@ -40,11 +40,11 @@ export async function initHoroscope(targetId) {
         const translated = await translateText(horoscopeText);
 
         ui.setContent(`
-            <div class=" py-1">
+            <div class="p-2">
                 <h3 class="fw-bold mb-0 text-center text-dark">${SPANISH} ${ICON}</h3>
-                <p class="text-secondary text-justify mt-2" style="font-size: 0.95rem; line-height: 1.5;">
+                <div class="text-secondary text-justify mt-2" style="font-size: 0.95rem;">
                     ${translated}
-                </p>
+                </div>
             </div>
         `);
         ui.setSuccess();

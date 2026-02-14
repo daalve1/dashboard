@@ -91,7 +91,6 @@ export async function initWeatherAdvice(targetId) {
                 <div class="text-center py-4 text-muted">
                     <div class="display-6 mb-2">☀️</div>
                     <div class="small fw-bold">Cielos tranquilos</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6;">Sin alertas para ${ZONA}</div>
                 </div>
             `);
         } else {

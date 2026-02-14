@@ -11,13 +11,12 @@ export async function initBirthdays(targetId) {
     try {
         const proximos = BIRTHDAYS.map(bd => {
             const [month, day] = bd.date.split('-').map(Number);
-            // Ojo: Date usa meses 0-11, nuestro string es 01-12
             const fechaObj = getNextEventDate(month, day);
             const diasFaltantes = getDaysDiff(fechaObj);
 
             return { ...bd, fechaObj, diasFaltantes };
         })
-        .filter(bd => bd.diasFaltantes < 35) // Filtro: próximos 35 días
+        .filter(bd => bd.diasFaltantes < 30) // Filtro: próximos 30 días
         .sort((a, b) => a.diasFaltantes - b.diasFaltantes);
 
         if (proximos.length === 0) {
@@ -53,7 +52,7 @@ export async function initBirthdays(targetId) {
             `;
         }).join('');
 
-        ui.setContent(`<div class="list-group list-group-flush">${html}</div>`);
+        ui.setContent(`<div class="list-group list-group-flush px-2">${html}</div>`);
         ui.setSuccess();
 
     } catch (error) {

@@ -80,14 +80,14 @@ export async function initWeather(targetId) {
         const viento = getPeriodValue(hora, prediccionHoy.viento);
 
         ui.setContent(`
-            <div class="row">
+            <div class="row p-2">
                 <div class="col-6 text-center">
                     <div class="fs-1 fw-bold">${getAemetEmoji(estado)}</div>
                     <div class="fs-1 fw-bold">${tempActual}°C</div>
                     <span class="text-primary fw-bold">↓ ${prediccionHoy.temperatura.minima}°</span>
                     <span class="text-danger fw-bold">↑ ${prediccionHoy.temperatura.maxima}°</span>
                 </div>
-                <div class="col-6 pt-3">
+                <div class="col-6 p-3">
                     <div class="text-muted small">
                         <span>🌧️ ${lluviaProb}%</span><br/>
                         <span>💧 ${humedad}%</span><br/>

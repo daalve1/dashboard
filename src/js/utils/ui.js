@@ -4,9 +4,7 @@ export function mountCard(targetId, title) {
 
     // HTML Base de la tarjeta
     container.innerHTML = `
-        <div class="card mb-2 shadow-sm">
-            <div class="card-body" id="${targetId}-content">
-            </div>
+        <div class="card mb-2 shadow-sm" id="${targetId}-content">
         </div>
     `;
 
