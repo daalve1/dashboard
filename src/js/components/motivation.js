@@ -13,14 +13,14 @@ export async function initMotivation(targetId) {
         const phraseData = data[Math.floor(Math.random() * data.length)];
 
         ui.setContent(`
-            <div class="d-flex flex-column h-100 p-2 text-white justify-content-center bg-purple">
+            <div class="d-flex flex-column h-100 px-2 py-0 text-white justify-content-center bg-purple">
                 <div class="lh-1" style="font-size: 4rem; font-family: serif; margin-bottom: -2rem;">
                     “
                 </div>
                 
                 <div class="px-3">
                     <blockquote class="blockquote mb-0 text-center">
-                        <p class="fs-5" style="line-height: 1.5; font-style: italic;">
+                        <p class="fs-6" style="line-height: 1; font-style: italic;">
                             ${phraseData.text}
                         </p>
                         <figcaption class="blockquote-footer mt-1 mb-0 fs-6 text-white" style="text-align: right; margin-right: 2rem;">
