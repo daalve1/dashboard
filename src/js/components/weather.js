@@ -3,6 +3,19 @@ import { lanzarDecoracion } from '../utils/decoration.js';
 import { UV_RANGES, CONFIG } from '../constants.js';
 import { fetchJson } from '../utils/api.js';
 
+/**
+ * Convierte una descripción de AEMET en un emoji representativo.
+ * Devuelve '🌧️' si la descripción contiene 'lluvia' o 'llovizna',
+ * '☀️' si contiene 'despejado',
+ * '🌤️' si contiene 'poco nuboso' o 'intervalos',
+ * '☁️' si contiene 'nuboso' o 'cubierto',
+ * '⛈️' si contiene 'tormenta',
+ * '❄️' si contiene 'nieve',
+ * '🌫️' si contiene 'niebla' o 'bruma',
+ * y '🌤️' en caso de no cumplir ninguna de las condiciones anteriores.
+ * @param {string} descripcion - Descripción de AEMET.
+ * @returns {string} - Emoji representativo de la descripción.
+ */
 function getAemetEmoji(descripcion) {
     const desc = descripcion.toLowerCase();
     if (desc.includes('lluvia') || desc.includes('llovizna')) {
@@ -18,17 +31,36 @@ function getAemetEmoji(descripcion) {
     return '🌤️';
 }
 
+/**
+ * Devuelve un objeto con la información del riesgo de exposición
+ * al sol correspondiente al índice UV pasado como parámetro.
+ * El objeto contiene las propiedades:
+ * - riesgo {string}: Descripción del riesgo.
+ * - color {string}: Color en formato hex (#rrggbb) para representar el riesgo.
+ * - icono {string}: Icono en formato string para representar el riesgo.
+ * - indice {number}: Valor numérico del índice UV.
+ * Si el índice no se encuentra en el rango de valores de UV_RANGES,
+ * devuelve el primer objeto de la lista.
+ * @param {number} indice - Índice UV a evaluar.
+ * @returns {object} - Objeto con la información del riesgo de exposición al sol.
+ */
 function getUVRisk(indice) {
     const valor = Math.round(indice);
     const nivel = UV_RANGES.find(r => valor >= r.min && valor <= r.max) || UV_RANGES[0];
     return { ...nivel, indice: valor };
 }
 
+
 /**
- * Extrae el valor correcto del array de periodos de AEMET según la hora actual.
- * AEMET divide el día en periodos de 6h.
+ * Devuelve el valor correspondiente al período horario actual.
+ * Si la información de AEMET contiene un solo dato para todo el día,
+ * devuelve ese valor. En caso de tener varios datos, devuelve el valor
+ * correspondiente al período horario actual.
+ * @param {number} hora - Hora actual en formato de 24 horas (0-23).
+ * @param {array} datos - Array de objetos con la información de AEMET.
+ * @returns {number|string} - Valor correspondiente al período horario actual.
  */
-function getPeriodValue(hora, datos, esDatoExtendido = false) {
+function getPeriodValue(hora, datos) {
     // Índices AEMET: 0-6h, 6-12h, 12-18h, 18-24h
     // Nota: Los arrays de AEMET a veces tienen longitud 4 (periodos) o 24 (horas) o 1 (dato único).
     // Asumimos estructura estándar de predicción diaria.
@@ -36,18 +68,32 @@ function getPeriodValue(hora, datos, esDatoExtendido = false) {
     if (!Array.isArray(datos) || datos.length === 0) return 0;
     
     // Si hay un solo dato para todo el día
-    if (datos.length === 1) return datos[0].value || datos[0].velocidad || 0;
+    if (datos.length === 1) return datos[0].value !== undefined ? datos[0].value : (datos[0].velocidad || 0);
 
-    let periodoIndex;
-    if (hora < 6) periodoIndex = 0;
-    else if (hora < 12) periodoIndex = 1;
-    else if (hora < 18) periodoIndex = 2;
-    else periodoIndex = 3;
+    let dato;
 
-    // A veces AEMET devuelve arrays de 7 elementos para viento/precipitacion extendida
-    // Ajuste defensivo: buscamos el periodo que coincida o el último disponible
-    const dato = datos[Math.min(periodoIndex, datos.length - 1)];
-    
+    // AEMET mezcla arrays que usan "periodo" (lluvia, viento) con arrays que usan "hora" (temperaturas)
+    if (datos[0].periodo !== undefined) {
+        let periodoBuscado;
+        if (hora < 6) periodoBuscado = "00-06";
+        else if (hora < 12) periodoBuscado = "06-12";
+        else if (hora < 18) periodoBuscado = "12-18";
+        else periodoBuscado = "18-24";
+        
+        // Busca el periodo exacto. Si no lo encuentra, usa el dato general del día (índice 0)
+        dato = datos.find(d => d.periodo === periodoBuscado) || datos[0];
+    } 
+    else if (datos[0].hora !== undefined) {
+        let horaBuscada;
+        if (hora < 6) horaBuscada = 6;
+        else if (hora < 12) horaBuscada = 12;
+        else if (hora < 18) horaBuscada = 18;
+        else horaBuscada = 24;
+        
+        dato = datos.find(d => d.hora === horaBuscada) || datos[0];
+    }
+
+    if (!dato) return 0;
     return dato.value !== undefined ? dato.value : (dato.velocidad || 0);
 }
 
@@ -57,11 +103,11 @@ export async function initWeather(targetId) {
     ui.setLoading(true);
 
     const apiKey = import.meta.env.VITE_AEMET_API_KEY;
-    const urlMunicipio = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/${CONFIG.LOCATION.AEMET_ID}?api_key=${apiKey}`;
-
+    const url = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/${CONFIG.LOCATION.AEMET_ID}?api_key=${apiKey}`;
+    console.log('url', url);
     try {
         // 1. Obtener URL de datos
-        const resMeta = await fetchJson(urlMunicipio);
+        const resMeta = await fetchJson(url);
         if (resMeta.estado !== 200) throw new Error(resMeta.descripcion);
 
         // 2. Obtener datos reales

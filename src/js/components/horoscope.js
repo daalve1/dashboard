@@ -15,6 +15,7 @@ async function fetchHoroscopo(url) {
         clearTimeout(timeoutId);
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         return await res.json();
     } catch (error) {
         clearTimeout(timeoutId);
@@ -32,11 +33,8 @@ export async function initHoroscope(targetId) {
     try {
         const ENDPOINT = HOROSCOPE.ENDPOINT;
         
-        let horoscopeText = "";
-        
         const data = await fetchHoroscopo(ENDPOINT);
-        horoscopeText = data.data.horoscope_data;
-        
+        const horoscopeText = data.data.horoscope;
         const translated = await translateText(horoscopeText);
 
         ui.setContent(`

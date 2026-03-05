@@ -1,6 +1,6 @@
 export const CONFIG = {
   LOCATION: {
-    NAME: "Torrent,Spain",
+    NAME: "Torrente,Valencia,Spain",
     AEMET_ID: "46244",
     LAT_LON: "39.43, -0.47"
   },

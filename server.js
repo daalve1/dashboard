@@ -9,65 +9,54 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const COMMON_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+};
+
 // ENDPOINT PROXY PARA AEMET
 app.get('/api/avisos', async (req, res) => {
-    const urlAemet = 'https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAC77_RSS.xml';
+    const url = 'https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAC77_RSS.xml';
 
     try {
-        const response = await fetch(urlAemet, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/xml, text/xml, */*'
-            }
+        const response = await fetch(url, {
+            headers: { ...COMMON_HEADERS, 'Accept': 'application/xml, text/xml, */*' }
         });
 
-        if (!response.ok) {
-            throw new Error(`Error AEMET: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error AEMET: ${response.status}`);
 
         const data = await response.text();
         
-        // Devolvemos el XML al frontend tal cual
         res.set('Content-Type', 'text/xml');
         res.send(data);
-
     } catch (error) {
-        console.error('[Proxy Error]', error.message);
-        res.status(500).send('<error>Error obteniendo avisos</error>');
+        console.error('[Proxy Error - AEMET]', error.message);
+        res.status(500).json({ error: 'Error obteniendo avisos' });
     }
 });
 
-// ENDPOINT PROXY PARA HOSÓSCOPO
+// ENDPOINT PROXY PARA HORÓSCOPO
 app.get('/api/horoscopo', async (req, res) => {
-    const url = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=sagittarius&day=today`;
+    // Parámetros dinámicos con fallback a los tuyos originales
+    const sign = req.query.sign || 'sagittarius';
+    const day = req.query.day || 'today';
+    const url = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${sign}&day=${day}`;
 
     try {
-        console.log(`[Proxy] Solicitando datos a HOSÓSCOPO...`);
-        
         const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/json, text/plain, */*'
-            }
+            headers: { ...COMMON_HEADERS, 'Accept': 'application/json, text/plain, */*' }
         });
 
-        if (!response.ok) {
-            throw new Error(`Error HOSÓSCOPO: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error HOSÓSCOPO: ${response.status}`);
 
         const data = await response.json();
         
-        // Devolvemos el JSON al frontend tal cual
-        res.set('Content-Type', 'application/json');
-        res.send(data);
-
+        res.json(data);
     } catch (error) {
-        console.error('[Proxy Error]', error.message);
-        res.status(500).send('<error>Error obteniendo horóscopo</error>');
+        console.error('[Proxy Error - Horóscopo]', error.message);
+        res.status(500).json({ error: 'Error obteniendo horóscopo' });
     }
 });
 
-// SERVIR TU FRONTEND
 app.use(express.static('dist')); 
 
 app.get(/.*/, (req, res) => {
