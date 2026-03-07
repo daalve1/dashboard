@@ -1,6 +1,13 @@
 import { fetchJson } from '../utils/api.js';
 import { mountCard } from '../utils/ui.js';
 
+/**
+ * Inicializa el componente de frases motivacionales.
+ * Muestra una frase aleatoria cada vez que se llama.
+ * La frase se muestra en una tarjeta con fondo morado y texto blanco.
+ * @param {string} targetId - El id del elemento HTML que se utilizará para montar la tarjeta.
+ * @throws {Error} - Si ocurre un error en la API de frases motivacionales.
+ */
 export async function initMotivation(targetId) {
   const ui = mountCard(targetId, 'Frase del Día');
   if (!ui) return;

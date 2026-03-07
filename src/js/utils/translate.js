@@ -9,7 +9,6 @@
 export async function translateText(text, targetLang = 'es') {
   if (!text) return '';
 
-  // Limpiamos espacios extra
   const cleanText = text.trim();
 
   // ------------------------------------------------------------------
@@ -28,15 +27,11 @@ export async function translateText(text, targetLang = 'es') {
     if (res.ok) {
       const data = await res.json();
 
-      // Google devuelve un array de arrays un poco complejo:
-      // [[["Hola mundo","Hello World",...], ["Otra frase",...]]]
-      // Mapeamos para unir todas las frases traducidas
       if (data && data[0]) {
         return data[0].map((item) => item[0]).join('');
       }
     }
   } catch (e) {
-    // Si falla el proxy o Google, pasamos silenciosamente al plan B
     console.warn('Google GTX falló, cambiando a MyMemory...', e);
   }
 
@@ -60,6 +55,6 @@ export async function translateText(text, targetLang = 'es') {
     console.error('Fallo total traducción:', e);
   }
 
-  // Si todo falla, devuelve el original (mejor que un error)
+  // Si todo falla, devuelve el original
   return cleanText;
 }

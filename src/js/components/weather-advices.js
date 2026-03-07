@@ -2,7 +2,14 @@ import { mountCard } from '../utils/ui.js';
 import { ALERTS } from '../constants.js';
 
 /**
- * Obtiene el XML de avisos de forma robusta
+ * Realiza una petición HTTP a la URL dada y devuelve el resultado en formato XML.
+ * La petición tiene un timeout de 5 segundos y se cancela si no se recibe respuesta
+ * en ese plazo de tiempo.
+ * Se agrega un parámetro 't' con el timestamp actual para evitar cachés.
+ *
+ * @param {string} url URL a la que se hará la petición
+ * @returns {Promise<string>} Promesa que se resuelve con el resultado de la petición en formato XML
+ * @throws {Error} Si la petición falla o se cancela
  */
 async function fetchAvisosXml(url) {
   const controller = new AbortController();
@@ -21,6 +28,18 @@ async function fetchAvisosXml(url) {
   }
 }
 
+/**
+ * Parsea el XML de avisos meteorológicos y devuelve un array de objetos con los siguientes campos:
+ * - fenomeno: String, nombre del fenómeno (meteorología, mar, etc.)
+ * - inicioStr: String, fecha de inicio en formato 'HH:MM (DD/MM)'
+ * - finStr: String, fecha de fin en formato 'HH:MM (DD/MM)'
+ * - fechaInicio: Date, objeto Date con la fecha de inicio
+ * - bg: String, código de color CSS para el fondo del aviso
+ *
+ * @param {string} xmlString String con el contenido XML de los avisos
+ * @param {string} zonaBuscada String con el nombre de la zona a buscar (p. ej. 'Litoral norte de Valencia')
+ * @returns {array<object>} Array de objetos con los avisos encontrados
+ */
 function parseAlerts(xmlString, zonaBuscada) {
   if (!xmlString || xmlString.trim().startsWith('<!DOCTYPE')) return [];
 
@@ -89,6 +108,15 @@ function parseAlerts(xmlString, zonaBuscada) {
   return alertas.sort((a, b) => a.fechaInicio - b.fechaInicio);
 }
 
+/**
+ * Inicializa el componente de avisos meteorológicos.
+ * Monta una tarjeta en el contenedor con id "targetId" con una lista de
+ * avisos meteorológicos actuales y futuras.
+ * La tarjeta lista los avisos con su respectiva fecha de inicio y
+ * finalización.
+ * Si no hay avisos meteorológicos, se muestra un mensaje de "Cielos tranquilos".
+ * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
+ */
 export async function initWeatherAdvice(targetId) {
   const ui = mountCard(targetId, 'Avisos Meteorológicos');
   if (!ui) return;
@@ -103,7 +131,7 @@ export async function initWeatherAdvice(targetId) {
 
     if (alertas.length === 0) {
       ui.setContent(`
-                <div class="text-center py-4 text-muted">
+                <div class="text-center py-1 text-muted">
                     <div class="display-6 mb-2">☀️</div>
                     <div class="small fw-bold">Cielos tranquilos</div>
                 </div>

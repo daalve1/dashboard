@@ -3,7 +3,11 @@ import { mountCard } from '../utils/ui.js';
 /**
  * Inicializa la tarjeta de estación del año.
  *
- * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
+ * @param {string} targetId - ID del elemento HTML que se
+ *      utilizará como contenedor para montar la tarjeta de
+ *      estación del año.
+ *
+ * @returns {undefined}
  */
 export async function initSeason(targetId) {
   const ui = mountCard(targetId, 'Estación del año');

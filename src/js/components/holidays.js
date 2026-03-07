@@ -2,6 +2,16 @@ import { mountCard } from '../utils/ui.js';
 import { getDaysDiff, formatDateBeautiful } from '../utils/dates.js';
 import { fetchJson } from '../utils/api.js';
 
+/**
+ * Inicializa la tarjeta de festivos del año.
+ * Muestra una lista de próximos festivos nacionales al día actual.
+ * La tarjeta lista los festivos con su respectiva fecha de inicio y
+ * finalización.
+ * Si no hay festivos nacionales, se muestra un mensaje de "No quedan
+ * festivos este año".
+ * @param {string} targetId - ID del elemento HTML que se utilizará para
+ * montar la tarjeta.
+ */
 export async function initHolidays(targetId) {
   const ui = mountCard(targetId, 'Próximos festivos');
   if (!ui) return;

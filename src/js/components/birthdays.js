@@ -3,6 +3,14 @@ import { BIRTHDAYS } from '../constants.js';
 import { lanzarDecoracion } from '../utils/decoration.js';
 import { getDaysDiff, getNextEventDate } from '../utils/dates.js';
 
+/**
+ * Inicializa el componente de los cumpleaños del año.
+ * Se lanzará una decoración en el contenedor con id "weather-mount" si
+ * la fecha de hoy coincide con un cumpleaños.
+ * @param {string} targetId - El id del contenedor donde se montará
+ * el componente.
+ * @throws {Error} - Si ocurre un error en la API de cumpleaños.
+ */
 export async function initBirthdays(targetId) {
   const ui = mountCard(targetId, 'Cumpleaños del Año');
   if (!ui) return;

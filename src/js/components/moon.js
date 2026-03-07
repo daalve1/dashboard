@@ -3,7 +3,11 @@ import { fetchJson } from '../utils/api.js';
 import { CONFIG, MOON_PHASES } from '../constants.js';
 
 /**
- * Convierte formato "HH:MM AM/PM" a "HH:MM" (24h)
+ * Converts a 12-hour time string to a 24-hour time string.
+ * If the time string is invalid or contains 'No rise' or 'No set',
+ * returns the original string.
+ * @param {string} timeStr - The time string to convert.
+ * @returns {string} The converted time string in 24-hour format.
  */
 function convertTo24h(timeStr) {
   if (!timeStr || timeStr.includes('No rise') || timeStr.includes('No set'))
@@ -18,6 +22,16 @@ function convertTo24h(timeStr) {
   return `${String(hours).padStart(2, '0')}:${minutes}`;
 }
 
+/**
+ * Inicializa la tarjeta de fase lunar.
+ *
+ * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
+ *
+ * Esta función utiliza la API de WeatherAPI para obtener los datos de astronomía
+ * correspondientes a la ubicación actual. Luego, utiliza los datos para mostrar
+ * la fase lunar actual, la iluminación de la luna y los momentos de salida y puesta
+ * del sol en la tarjeta.
+ */
 export async function initMoon(targetId) {
   const ui = mountCard(targetId, 'Fase Lunar');
   if (!ui) return;
