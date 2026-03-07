@@ -4,38 +4,46 @@ import { lanzarDecoracion } from '../utils/decoration.js';
 import { getDaysDiff, getNextEventDate } from '../utils/dates.js';
 
 export async function initBirthdays(targetId) {
-    const ui = mountCard(targetId, 'Cumpleaños del Año');
-    if (!ui) return;
-    ui.setLoading(true);
+  const ui = mountCard(targetId, 'Cumpleaños del Año');
+  if (!ui) return;
+  ui.setLoading(true);
 
-    try {
-        const proximos = BIRTHDAYS.map(bd => {
-            const [month, day] = bd.date.split('-').map(Number);
-            const fechaObj = getNextEventDate(month, day);
-            const diasFaltantes = getDaysDiff(fechaObj);
+  try {
+    const proximos = BIRTHDAYS.map((bd) => {
+      const [month, day] = bd.date.split('-').map(Number);
+      const fechaObj = getNextEventDate(month, day);
+      const diasFaltantes = getDaysDiff(fechaObj);
 
-            return { ...bd, fechaObj, diasFaltantes };
-        })
-        .filter(bd => bd.diasFaltantes < 30) // Filtro: próximos 30 días
-        .sort((a, b) => a.diasFaltantes - b.diasFaltantes);
+      return { ...bd, fechaObj, diasFaltantes };
+    })
+      .filter((bd) => bd.diasFaltantes < 30) // Filtro: próximos 30 días
+      .sort((a, b) => a.diasFaltantes - b.diasFaltantes);
 
-        if (proximos.length === 0) {
-            ui.setContent('<div class="text-muted text-center small py-2">No hay cumpleaños cercanos</div>');
-            ui.setSuccess();
-            return;
-        }
+    if (proximos.length === 0) {
+      ui.setContent(
+        '<div class="text-muted text-center small py-2">No hay cumpleaños cercanos</div>'
+      );
+      ui.setSuccess();
+      return;
+    }
 
-        const html = proximos.map(bd => {
-            const esHoy = bd.diasFaltantes === 0;
-            if (esHoy && bd.date === '12-12') lanzarDecoracion(targetId, 'confeti');
+    const html = proximos
+      .map((bd) => {
+        const esHoy = bd.diasFaltantes === 0;
+        if (esHoy && bd.date === '12-12') lanzarDecoracion(targetId, 'confeti');
 
-            let badge = esHoy ? '<span class="badge bg-danger">¡Hoy!</span>' 
-                      : bd.diasFaltantes === 1 ? '<span class="badge bg-warning text-dark">Mañana</span>'
-                      : `<span class="badge bg-purple">${bd.diasFaltantes} días</span>`;
+        let badge = esHoy
+          ? '<span class="badge bg-danger">¡Hoy!</span>'
+          : bd.diasFaltantes === 1
+            ? '<span class="badge bg-warning text-dark">Mañana</span>'
+            : `<span class="badge bg-purple">${bd.diasFaltantes} días</span>`;
 
-            const fechaStr = bd.fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        const fechaStr = bd.fechaObj.toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'short',
+        });
 
-            return `
+        return `
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-bottom-0">
                     <div class="d-flex align-items-center gap-2">
                         <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
@@ -50,12 +58,15 @@ export async function initBirthdays(targetId) {
                     ${badge}
                 </div>
             `;
-        }).join('');
+      })
+      .join('');
 
-        ui.setContent(`<div class="list-group list-group-flush px-2">${html}</div>`);
-        ui.setSuccess();
-
-    } catch (error) {
-        ui.setError('Error API cumpleaños');
-    }
+    ui.setContent(
+      `<div class="list-group list-group-flush px-2">${html}</div>`
+    );
+    ui.setSuccess();
+  } catch (error) {
+    console.error(error);
+    ui.setError('Error API cumpleaños');
+  }
 }

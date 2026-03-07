@@ -5,96 +5,113 @@ import { ALERTS } from '../constants.js';
  * Obtiene el XML de avisos de forma robusta
  */
 async function fetchAvisosXml(url) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    try {
-        const res = await fetch(`${url}?t=${Date.now()}`, { 
-            signal: controller.signal,
-            headers: { 'Cache-Control': 'no-cache' } 
-        });
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.text();
-    } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
-    }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`${url}?t=${Date.now()}`, {
+      signal: controller.signal,
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
 }
 
 function parseAlerts(xmlString, zonaBuscada) {
-    if (!xmlString || xmlString.trim().startsWith("<!DOCTYPE")) return [];
-    
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-    const items = xmlDoc.querySelectorAll("item");
-    const alertas = [];
-    const ahora = new Date();
-    const styles = ALERTS.STYLES;
+  if (!xmlString || xmlString.trim().startsWith('<!DOCTYPE')) return [];
 
-    items.forEach(item => {
-        const titleRaw = item.querySelector("title")?.textContent || "";
-        const descRaw = item.querySelector("description")?.textContent || "";
-        const titleLower = titleRaw.toLowerCase();
-        
-        if (titleLower.includes(zonaBuscada.toLowerCase()) && !titleLower.includes("costeros")) {
-            const dateRegex = /(\d{2}:\d{2})\s(\d{2})-(\d{2})-(\d{4})/g;
-            const matches = [...descRaw.matchAll(dateRegex)];
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+  const items = xmlDoc.querySelectorAll('item');
+  const alertas = [];
+  const ahora = new Date();
+  const styles = ALERTS.STYLES;
 
-            if (matches.length >= 2) {
-                // Parsear Fecha Inicio
-                const [hIni, mIni] = matches[0][1].split(':');
-                const fechaInicio = new Date(matches[0][4], matches[0][3] - 1, matches[0][2], hIni, mIni);
+  items.forEach((item) => {
+    const titleRaw = item.querySelector('title')?.textContent || '';
+    const descRaw = item.querySelector('description')?.textContent || '';
+    const titleLower = titleRaw.toLowerCase();
 
-                // Parsear Fecha Fin
-                const [hFin, mFin] = matches[1][1].split(':');
-                const fechaFin = new Date(matches[1][4], matches[1][3] - 1, matches[1][2], hFin, mFin);
-                
-                // Filtrar si ya caducó
-                if (fechaFin < ahora) return;
+    if (
+      titleLower.includes(zonaBuscada.toLowerCase()) &&
+      !titleLower.includes('costeros')
+    ) {
+      const dateRegex = /(\d{2}:\d{2})\s(\d{2})-(\d{2})-(\d{4})/g;
+      const matches = [...descRaw.matchAll(dateRegex)];
 
-                let bg = styles.DEFAULT;
-                if (titleLower.includes("amarillo")) bg = styles.AMARILLO;
-                else if (titleLower.includes("naranja")) bg = styles.NARANJA;
-                else if (titleLower.includes("rojo")) bg = styles.ROJO;
+      if (matches.length >= 2) {
+        // Parsear Fecha Inicio
+        const [hIni, mIni] = matches[0][1].split(':');
+        const fechaInicio = new Date(
+          matches[0][4],
+          matches[0][3] - 1,
+          matches[0][2],
+          hIni,
+          mIni
+        );
 
-                const fenomeno = titleRaw.split('.')[2]?.trim() || "Meteorología";
-                
-                alertas.push({
-                    fenomeno: fenomeno.toLowerCase(),
-                    inicioStr: `${matches[0][1]} (${matches[0][2]}/${matches[0][3]})`,
-                    finStr: `${matches[1][1]} (${matches[1][2]}/${matches[1][3]})`,
-                    fechaInicio: fechaInicio, // Guardamos el objeto Date para ordenar
-                    bg: bg
-                });
-            }
-        }
-    });
+        // Parsear Fecha Fin
+        const [hFin, mFin] = matches[1][1].split(':');
+        const fechaFin = new Date(
+          matches[1][4],
+          matches[1][3] - 1,
+          matches[1][2],
+          hFin,
+          mFin
+        );
 
-    // ORDENAR: De más reciente (más cercano al presente) a más antiguo (futuro lejano)
-    return alertas.sort((a, b) => a.fechaInicio - b.fechaInicio);
+        // Filtrar si ya caducó
+        if (fechaFin < ahora) return;
+
+        let bg = styles.DEFAULT;
+        if (titleLower.includes('amarillo')) bg = styles.AMARILLO;
+        else if (titleLower.includes('naranja')) bg = styles.NARANJA;
+        else if (titleLower.includes('rojo')) bg = styles.ROJO;
+
+        const fenomeno = titleRaw.split('.')[2]?.trim() || 'Meteorología';
+
+        alertas.push({
+          fenomeno: fenomeno.toLowerCase(),
+          inicioStr: `${matches[0][1]} (${matches[0][2]}/${matches[0][3]})`,
+          finStr: `${matches[1][1]} (${matches[1][2]}/${matches[1][3]})`,
+          fechaInicio: fechaInicio, // Guardamos el objeto Date para ordenar
+          bg: bg,
+        });
+      }
+    }
+  });
+
+  // ORDENAR: De más reciente (más cercano al presente) a más antiguo (futuro lejano)
+  return alertas.sort((a, b) => a.fechaInicio - b.fechaInicio);
 }
 
 export async function initWeatherAdvice(targetId) {
-    const ui = mountCard(targetId, 'Avisos Meteorológicos');
-    if (!ui) return;
-    ui.setLoading(true);
+  const ui = mountCard(targetId, 'Avisos Meteorológicos');
+  if (!ui) return;
+  ui.setLoading(true);
 
-    const ENDPOINT = ALERTS.ENDPOINT;
-    const ZONA = ALERTS.ZONE;
+  const ENDPOINT = ALERTS.ENDPOINT;
+  const ZONA = ALERTS.ZONE;
 
-    try {
-        const xmlData = await fetchAvisosXml(ENDPOINT);
-        const alertas = parseAlerts(xmlData, ZONA);
+  try {
+    const xmlData = await fetchAvisosXml(ENDPOINT);
+    const alertas = parseAlerts(xmlData, ZONA);
 
-        if (alertas.length === 0) {
-            ui.setContent(`
+    if (alertas.length === 0) {
+      ui.setContent(`
                 <div class="text-center py-4 text-muted">
                     <div class="display-6 mb-2">☀️</div>
                     <div class="small fw-bold">Cielos tranquilos</div>
                 </div>
             `);
-        } else {
-            const html = alertas.map(alerta => `
+    } else {
+      const html = alertas
+        .map(
+          (alerta) => `
                 <div class="mb-2 border-0 shadow-sm" 
                      style="background: ${alerta.bg}; border-radius: 12px; overflow: hidden; color: white;">
                     <div class="p-2">
@@ -114,13 +131,15 @@ export async function initWeatherAdvice(targetId) {
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `
+        )
+        .join('');
 
-            ui.setContent(`<div class="p-1">${html}</div>`);
-        }
-        ui.setSuccess();
-    } catch (error) {
-        console.error(error);
-        ui.setError('Error API Avisos meteorológicos');
+      ui.setContent(`<div class="p-1">${html}</div>`);
     }
+    ui.setSuccess();
+  } catch (error) {
+    console.error(error);
+    ui.setError('Error API Avisos meteorológicos');
+  }
 }

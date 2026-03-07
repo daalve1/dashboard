@@ -2,19 +2,19 @@ import { mountCard } from '../utils/ui.js';
 
 /**
  * Inicializa la tarjeta de estación del año.
- * 
+ *
  * @param {string} targetId - ID del elemento HTML que se utilizará para montar la tarjeta.
  */
 export async function initSeason(targetId) {
-    const ui = mountCard(targetId, 'Estación del año');
-    if (!ui) return;
-    ui.setLoading(true);
+  const ui = mountCard(targetId, 'Estación del año');
+  if (!ui) return;
+  ui.setLoading(true);
 
-    const { estacionActual, estacionSiguiente, diasFaltantes } = infoEstacion();
+  const { estacionActual, diasFaltantes } = infoEstacion();
 
-    const fecha = formatDate(estacionActual.inicio);
+  const fecha = formatDate(estacionActual.inicio);
 
-    ui.setContent(`
+  ui.setContent(`
         <div class="text-center py-1">
             <h3 class="fw-bold mb-0 text-dark">${estacionActual.nombre}</h3>
             <div class="text-primary fw-bold my-2">
@@ -26,7 +26,7 @@ export async function initSeason(targetId) {
         </div>
     `);
 
-    ui.setSuccess();
+  ui.setSuccess();
 }
 
 /**
@@ -35,16 +35,16 @@ export async function initSeason(targetId) {
  * @returns {string} - Fecha formateada (Ej: "Viernes, 21 de marzo")
  */
 function formatDate(fecha) {
-    const opciones = { 
-        weekday: 'long', 
-        day: 'numeric', 
-        month: 'long' 
-    };
+  const opciones = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  };
 
-    const fechaFormateada = fecha.toLocaleDateString('es-ES', opciones);
+  const fechaFormateada = fecha.toLocaleDateString('es-ES', opciones);
 
-    // Capitalizar la primera letra (Viernes en lugar de viernes)
-    return fechaFormateada.replace(/^\w/, (c) => c.toUpperCase());
+  // Capitalizar la primera letra (Viernes en lugar de viernes)
+  return fechaFormateada.replace(/^\w/, (c) => c.toUpperCase());
 }
 
 /**
@@ -60,10 +60,10 @@ function infoEstacion() {
 
   // Definimos las fechas de inicio (Mes es 0-indexado: 2 = Marzo, 5 = Junio, etc.)
   const estaciones = [
-    { nombre: "Primavera 🌼", inicio: new Date(anioActual, 2, 21) },
-    { nombre: "Verano 🏖️", inicio: new Date(anioActual, 5, 21) },
-    { nombre: "Otoño 🍂", inicio: new Date(anioActual, 8, 21) },
-    { nombre: "Invierno 🥶", inicio: new Date(anioActual, 11, 21) }
+    { nombre: 'Primavera 🌼', inicio: new Date(anioActual, 2, 21) },
+    { nombre: 'Verano 🏖️', inicio: new Date(anioActual, 5, 21) },
+    { nombre: 'Otoño 🍂', inicio: new Date(anioActual, 8, 21) },
+    { nombre: 'Invierno 🥶', inicio: new Date(anioActual, 11, 21) },
   ];
 
   let estacionActual, proximaEstacion;
@@ -84,9 +84,9 @@ function infoEstacion() {
   } else {
     estacionActual = estaciones[3];
     // Si ya pasamos el 21 de Dic, la próxima es la Primavera del año que viene
-    proximaEstacion = { 
-        nombre: estaciones[0].nombre, 
-        inicio: new Date(anioActual + 1, 2, 21) 
+    proximaEstacion = {
+      nombre: estaciones[0].nombre,
+      inicio: new Date(anioActual + 1, 2, 21),
     };
   }
 
@@ -97,6 +97,6 @@ function infoEstacion() {
   return {
     estacionActual,
     estacionSiguiente: proximaEstacion.nombre,
-    diasFaltantes
+    diasFaltantes,
   };
 }

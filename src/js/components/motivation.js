@@ -2,17 +2,19 @@ import { fetchJson } from '../utils/api.js';
 import { mountCard } from '../utils/ui.js';
 
 export async function initMotivation(targetId) {
-    const ui = mountCard(targetId, 'Frase del Día');
-    if (!ui) return;
+  const ui = mountCard(targetId, 'Frase del Día');
+  if (!ui) return;
 
-    ui.setLoading(true);
+  ui.setLoading(true);
 
-    try {
-        const randomCategory = Math.random() < 0.5 ? 1 : 2; 
-        const data = await fetchJson(`https://www.positive-api.online/phrases/esp?category_id=${randomCategory}`);
-        const phraseData = data[Math.floor(Math.random() * data.length)];
+  try {
+    const randomCategory = Math.random() < 0.5 ? 1 : 2;
+    const data = await fetchJson(
+      `https://www.positive-api.online/phrases/esp?category_id=${randomCategory}`
+    );
+    const phraseData = data[Math.floor(Math.random() * data.length)];
 
-        ui.setContent(`
+    ui.setContent(`
             <div class="d-flex flex-column h-100 px-2 py-0 text-white justify-content-center bg-purple">
                 <div class="lh-1" style="font-size: 4rem; font-family: serif; margin-bottom: -2rem;">
                     “
@@ -34,10 +36,10 @@ export async function initMotivation(targetId) {
                 </div>
             </div>
         `);
-        
-        ui.setSuccess();
 
-    } catch (error) {
-        ui.setError('Error API Frases motivacionales');
-    }
+    ui.setSuccess();
+  } catch (error) {
+    console.error(error);
+    ui.setError('Error API Frases motivacionales');
+  }
 }
